@@ -1,10 +1,17 @@
 import type { SmartMapsEngine } from '../../engine/SmartMapsEngine';
+import type { NavigationService } from '../../services/NavigationService';
 import { POIS } from '../../data/pois';
 import { LOCATIONS } from '../smart-maps/locations';
 import type { CameraPose } from '../../engine/types';
 
 export interface CommandContext {
   engine: SmartMapsEngine;
+  /**
+   * The navigation service is the only path commands may take for routing /
+   * destination / location work. Direct engine.navigation usage for navigation
+   * state is forbidden — go through the service.
+   */
+  navigationService: NavigationService;
   query: string;
   match?: RegExpMatchArray;
 }
@@ -115,11 +122,11 @@ export const COMMANDS: CommandDef[] = [
     description: 'Route from your location to a POI',
     examples: ['route to Big Ben', 'directions to Tower Bridge'],
     patterns: [/^(?:route|navigate|directions?)\s+(?:to|toward(?:s)?)\s+(.+)$/i],
-    run({ engine, match }) {
+    run({ navigationService, match }) {
       const target = match?.[1]?.trim() ?? '';
       const poi = findPOI(target);
       if (!poi) return `I couldn't find "${target}" to route to.`;
-      engine.navigation.routeFromUserTo({ lng: poi.center[0], lat: poi.center[1] });
+      navigationService.startNavigation({ lng: poi.center[0], lat: poi.center[1] });
       return `Routing to ${poi.name}.`;
     }
   },
@@ -128,8 +135,8 @@ export const COMMANDS: CommandDef[] = [
     description: 'Clear the current route',
     examples: ['clear route', 'cancel route'],
     patterns: [/^(?:clear|cancel|remove|hide)\s+route$/i],
-    run({ engine }) {
-      engine.navigation.clearRoute();
+    run({ navigationService }) {
+      navigationService.stopNavigation();
       return 'Route cleared.';
     }
   },

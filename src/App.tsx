@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { MapMouseEvent } from 'maplibre-gl';
 import MapView from './components/MapView';
 import AskMapsBar from './components/AskMapsBar';
 import LocationSwitcher from './components/LocationSwitcher';
@@ -6,6 +7,7 @@ import HUD from './components/HUD';
 import Toast from './components/Toast';
 import { SmartMapsEngine } from './engine/SmartMapsEngine';
 import { LOCATIONS, type LocationId } from './modules/smart-maps/locations';
+import { AutoLinkBridge } from './modules/autolink/AutoLinkBridge';
 
 export default function App() {
   const [engine, setEngine] = useState<SmartMapsEngine | null>(null);
@@ -23,12 +25,37 @@ export default function App() {
       }
     });
     setEngine(e);
+
+    // AutoLink module — talks ONLY to the navigation service, never the engine.
+    const autoLink = new AutoLinkBridge(e.navigationService);
+    autoLink.start();
+
     return () => {
+      autoLink.stop();
       e.detach();
       setEngine(null);
       setReady(false);
     };
   }, []);
+
+  // Map tap → navigation service. The engine no longer handles clicks itself; the
+  // UI surface is responsible for translating taps into navigation intent so all
+  // navigation goes through the service.
+  useEffect(() => {
+    if (!engine || !ready) return;
+    const map = engine.getMap();
+    if (!map) return;
+    const handler = (e: MapMouseEvent) => {
+      engine.navigationService.startNavigation({
+        lng: e.lngLat.lng,
+        lat: e.lngLat.lat
+      });
+    };
+    map.on('click', handler);
+    return () => {
+      map.off('click', handler);
+    };
+  }, [engine, ready]);
 
   const handleSelectLocation = (id: LocationId) => {
     setActiveLocation(id);

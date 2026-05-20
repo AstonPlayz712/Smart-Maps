@@ -255,6 +255,13 @@ body {
   box-shadow: var(--shadow);
 }
 .route-info strong { color: var(--fg); font-weight: 600; }
+.route-arrived {
+  color: var(--accent-2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+}
 
 @media (max-width: 540px) {
   .overlay.top { flex-direction: column; align-items: stretch; gap: 8px; }

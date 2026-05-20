@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { SmartMapsEngine } from '../engine/SmartMapsEngine';
+import type {
+  NavigationRoute,
+  NavigationState
+} from '../services/NavigationService';
 
 interface Props {
   engine?: SmartMapsEngine;
@@ -7,15 +11,17 @@ interface Props {
 }
 
 export default function HUD({ engine, ready }: Props) {
-  const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSec: number } | null>(null);
+  const [route, setRoute] = useState<NavigationRoute | null>(null);
+  const [navState, setNavState] = useState<NavigationState>('idle');
 
   useEffect(() => {
     if (!engine) return;
-    const offDone = engine.bus.on('route:done', (info) => setRouteInfo(info));
-    const offClear = engine.bus.on('route:clear', () => setRouteInfo(null));
+    const service = engine.navigationService;
+    const offRoute = service.onRouteUpdate((r) => setRoute(r), 'ui');
+    const offState = service.onNavigationStateChange((s) => setNavState(s), 'ui');
     return () => {
-      offDone();
-      offClear();
+      offRoute();
+      offState();
     };
   }, [engine]);
 
@@ -29,12 +35,18 @@ export default function HUD({ engine, ready }: Props) {
         <button title="Cinematic tilt" onClick={() => engine.askMaps.run('cinematic')}>◭</button>
         <button title="Cinematic tour" onClick={() => engine.askMaps.run('cinematic tour')}>▶</button>
         <button title="Stop motion" onClick={() => engine.askMaps.run('stop')}>■</button>
-        <button title="Clear route" onClick={() => engine.askMaps.run('clear route')}>✕</button>
+        <button
+          title="Clear route"
+          onClick={() => engine.navigationService.stopNavigation()}
+        >
+          ✕
+        </button>
       </div>
-      {routeInfo && (
+      {route && (
         <div className="route-info" role="status">
-          <strong>{(routeInfo.distanceMeters / 1000).toFixed(2)} km</strong>{' '}
-          · ~{Math.max(1, Math.round(routeInfo.durationSec / 60))} min walk
+          <strong>{(route.distanceMeters / 1000).toFixed(2)} km</strong>{' '}
+          · ~{Math.max(1, Math.round(route.durationSec / 60))} min walk
+          {navState === 'arrived' && <span className="route-arrived"> · arrived</span>}
         </div>
       )}
     </>

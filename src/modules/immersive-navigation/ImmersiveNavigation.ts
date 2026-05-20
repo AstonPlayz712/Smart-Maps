@@ -87,13 +87,13 @@ export class ImmersiveNavigation {
     this.camera?.stopTour();
   }
 
-  routeFromUserTo(target: LatLng): void {
-    if (!this.route) return;
-    this.route.routeTo(target);
-    this.camera?.fly(
-      { center: [target.lng, target.lat], zoom: 16.4, pitch: 66 },
-      { duration: 2000 }
-    );
+  /**
+   * Draw a route polyline from `from` to `to`. Low-level primitive — callers
+   * should go through `NavigationService.startNavigation` instead of using this
+   * directly, so navigation state stays in one place.
+   */
+  drawRoute(to: LatLng, from?: LatLng): void {
+    this.route?.routeTo(to, from);
   }
 
   clearRoute(): void {

@@ -31,7 +31,12 @@ export class AskMaps {
       return msg;
     }
     const out =
-      (await result.command.run({ engine: this.engine, query, match: result.match })) ?? '';
+      (await result.command.run({
+        engine: this.engine,
+        navigationService: this.engine.navigationService,
+        query,
+        match: result.match
+      })) ?? '';
     if (out) this.engine.bus.emit('engine:toast', out);
     this.history.push({ input: query, response: out, at: Date.now() });
     return out;

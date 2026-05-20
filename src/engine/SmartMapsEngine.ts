@@ -6,6 +6,7 @@ import { ImmersiveNavigation } from '../modules/immersive-navigation/ImmersiveNa
 import { AskMaps } from '../modules/ask-maps/AskMaps';
 import { LOCATIONS, type LocationId } from '../modules/smart-maps/locations';
 import { POIS } from '../data/pois';
+import { NavigationService } from '../services/NavigationService';
 
 export interface EngineOptions {
   initialLocation: LocationId;
@@ -32,12 +33,14 @@ export class SmartMapsEngine {
   readonly bus = new EventBus<EngineEvents>();
   readonly renderer: SmartMapsRenderer;
   readonly navigation: ImmersiveNavigation;
+  readonly navigationService: NavigationService;
   readonly askMaps: AskMaps;
 
   constructor(opts: EngineOptions) {
     this.currentLocation = opts.initialLocation;
     this.renderer = new SmartMapsRenderer(this.bus);
     this.navigation = new ImmersiveNavigation(this.bus);
+    this.navigationService = new NavigationService(this);
     this.askMaps = new AskMaps(this);
 
     if (opts.onReady) this.bus.on('engine:ready', opts.onReady);
@@ -61,13 +64,12 @@ export class SmartMapsEngine {
       this.bus.emit('engine:toast', `Welcome to ${start.name}`);
     });
 
-    // Tap-to-route: any click on the map drops a destination pin and routes from the user.
-    this.map.on('click', (e) => {
-      this.navigation.routeFromUserTo({ lng: e.lngLat.lng, lat: e.lngLat.lat });
-    });
+    // Tap-to-route binding lives on the UI / NavigationService side, not the engine.
+    // The engine no longer wires its own click → route shortcut; see App.tsx.
   }
 
   detach(): void {
+    this.navigationService.destroy();
     this.bus.clear();
     this.map?.remove();
     this.map = undefined;

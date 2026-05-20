@@ -5,6 +5,32 @@ Immersive Navigation (camera engine), and Ask Maps (AI command layer) — runnin
 one engine, in the browser, with London and Zante (Zakynthos) in 3D.
 
 ```
+                ┌──────────────────────────────────────────┐
+                │           NavigationService              │
+                │                                          │
+                │   owns: location · destination · route   │
+                │         state (idle/starting/navigating/ │
+                │                arrived/stopped)          │
+                │                                          │
+                │   exposes:                               │
+                │     startNavigation(dest)                │
+                │     stopNavigation()                     │
+                │     onLocationUpdate(cb)                 │
+                │     onRouteUpdate(cb)                    │
+                │     onNavigationStateChange(cb)          │
+                └──────────┬─────────────┬─────────────────┘
+                           │             │
+       ┌───────────────────┘             └─────────────────┐
+       ▼                                                   ▼
+  ╔═════════╗     ╔════════════╗     ╔══════════╗     ╔══════════╗
+  ║   UI    ║     ║  Ask Maps  ║     ║ AutoLink ║     ║          ║
+  ╚═════════╝     ╚════════════╝     ╚══════════╝     ║   ...    ║
+       │               │                  │           ║          ║
+       │               │                  │           ╚══════════╝
+       └───────────────┴──────────────────┘
+              (every module talks to the service,
+               not to the engine, for navigation)
+
  ┌──────────────────────────────────────────────────────────────────┐
  │                       SmartMapsEngine                            │
  │                                                                  │
@@ -16,10 +42,10 @@ one engine, in the browser, with London and Zante (Zakynthos) in 3D.
  │   │ 3D buildings │    │ RouteEngine         │    │ Registry   │  │
  │   │ + terrain +  │    │                     │    │            │  │
  │   │ sky          │    │ fly / orbit / tour  │    │ executes   │  │
- │   │              │    │                     │    │ against    │  │
- │   └──────┬───────┘    └──────────┬──────────┘    │ engine API │  │
- │          │                       │               └─────┬──────┘  │
- │          └───────────┬───────────┘                     │         │
+ │   │              │    │ drawRoute (prim.)   │    │ against    │  │
+ │   └──────┬───────┘    └──────────┬──────────┘    │ engine +   │  │
+ │          │                       │               │ service    │  │
+ │          └───────────┬───────────┘               └─────┬──────┘  │
  │                     EventBus  ◀─── shared event channel ─────────┘
  └──────────────────────────────────────────────────────────────────┘
 ```
@@ -59,10 +85,12 @@ The repo is organised so each module is independently swappable:
 ```
 src/
 ├── engine/
-│   ├── SmartMapsEngine.ts      ← conductor: owns the three modules
+│   ├── SmartMapsEngine.ts      ← conductor: owns renderer/nav/askMaps/service
 │   ├── EventBus.ts             ← typed pub/sub
 │   ├── types.ts                ← shared types (CameraPose, POI, events)
 │   └── config.ts               ← tile URLs, terrain config
+├── services/
+│   └── NavigationService.ts    ← THE NAVIGATION KERNEL (state + subscribers)
 ├── modules/
 │   ├── smart-maps/             ← THE RENDERER
 │   │   ├── SmartMapsRenderer.ts
@@ -73,10 +101,12 @@ src/
 │   │   ├── CinematicCamera.ts
 │   │   ├── RouteEngine.ts
 │   │   └── easing.ts
-│   └── ask-maps/               ← THE AI COMMAND LAYER
-│       ├── AskMaps.ts
-│       ├── CommandParser.ts
-│       └── commandRegistry.ts
+│   ├── ask-maps/               ← THE AI COMMAND LAYER
+│   │   ├── AskMaps.ts
+│   │   ├── CommandParser.ts
+│   │   └── commandRegistry.ts
+│   └── autolink/               ← COMPANION-DEVICE BRIDGE
+│       └── AutoLinkBridge.ts   (subscribes via 'autolink' channel)
 ├── components/                 ← thin React surfaces
 │   ├── MapView.tsx
 │   ├── AskMapsBar.tsx
@@ -91,6 +121,37 @@ src/
 ├── main.tsx
 └── styles.css
 ```
+
+## NavigationService
+
+Every consumer that cares about routing — the UI, Ask Maps commands, the AutoLink
+bridge — coordinates through `NavigationService`. It is the single source of truth
+for:
+
+- **current location** (live `watchPosition`, falls back to map center)
+- **destination**
+- **current route** (origin / destination / distance / ETA / start time)
+- **navigation state** (`idle` → `starting` → `navigating` → `arrived` / `stopped`)
+- **subscribers**, tagged per channel: `autolink` · `ask-maps` · `ui`
+
+```ts
+const off = engine.navigationService.onRouteUpdate((route) => {
+  if (route) console.log(route.distanceMeters, route.durationSec);
+}, 'ui');
+
+engine.navigationService.startNavigation({ lng: -0.0754, lat: 51.5055 });
+// later
+engine.navigationService.stopNavigation();
+off();
+```
+
+The engine deliberately no longer wires map clicks to routing itself — that
+belongs to the UI. `App.tsx` binds `map.on('click', …)` to
+`navigationService.startNavigation(...)`. Ask Maps commands like `route to Big Ben`
+and `clear route` reach for `ctx.navigationService` rather than the engine's
+`ImmersiveNavigation` directly. `AutoLinkBridge` subscribes to all three streams
+on the `autolink` channel and currently logs to the console — replace its
+handlers with a transport adapter to push state to a companion device.
 
 ## Ask Maps grammar (cheat sheet)
 
