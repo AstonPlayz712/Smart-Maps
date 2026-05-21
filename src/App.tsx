@@ -3,6 +3,7 @@ import type { MapMouseEvent } from 'maplibre-gl';
 import MapView from './components/MapView';
 import AskMapsBar from './components/AskMapsBar';
 import LocationSwitcher from './components/LocationSwitcher';
+import LocationProviderChip from './components/LocationProviderChip';
 import HUD from './components/HUD';
 import Toast from './components/Toast';
 import { SmartMapsEngine } from './engine/SmartMapsEngine';
@@ -71,11 +72,14 @@ export default function App() {
           <span className="brand-dot" />
           Smart Maps <span className="brand-os">OS</span>
         </div>
-        <LocationSwitcher
-          locations={LOCATIONS}
-          activeId={activeLocation}
-          onSelect={handleSelectLocation}
-        />
+        <div className="top-right-group">
+          <LocationProviderChip engine={engine ?? undefined} />
+          <LocationSwitcher
+            locations={LOCATIONS}
+            activeId={activeLocation}
+            onSelect={handleSelectLocation}
+          />
+        </div>
       </div>
 
       <HUD engine={engine ?? undefined} ready={ready} />

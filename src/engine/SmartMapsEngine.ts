@@ -7,6 +7,12 @@ import { AskMaps } from '../modules/ask-maps/AskMaps';
 import { LOCATIONS, type LocationId } from '../modules/smart-maps/locations';
 import { POIS } from '../data/pois';
 import { NavigationService } from '../services/NavigationService';
+import { LocationProviders } from '../services/location-providers/LocationProviders';
+import { WiFiProvider } from '../services/location-providers/providers/WiFiProvider';
+import { BluetoothBeaconProvider } from '../services/location-providers/providers/BluetoothBeaconProvider';
+import { AutoLinkLocationProvider } from '../services/location-providers/providers/AutoLinkLocationProvider';
+import { SensorFusionProvider } from '../services/location-providers/providers/SensorFusionProvider';
+import { ManualProvider } from '../services/location-providers/providers/ManualProvider';
 
 export interface EngineOptions {
   initialLocation: LocationId;
@@ -33,6 +39,7 @@ export class SmartMapsEngine {
   readonly bus = new EventBus<EngineEvents>();
   readonly renderer: SmartMapsRenderer;
   readonly navigation: ImmersiveNavigation;
+  readonly locationProviders: LocationProviders;
   readonly navigationService: NavigationService;
   readonly askMaps: AskMaps;
 
@@ -40,6 +47,21 @@ export class SmartMapsEngine {
     this.currentLocation = opts.initialLocation;
     this.renderer = new SmartMapsRenderer(this.bus);
     this.navigation = new ImmersiveNavigation(this.bus);
+
+    // Location providers come up before NavigationService so the service has a
+    // location source from its first tick.
+    this.locationProviders = new LocationProviders(
+      [
+        new WiFiProvider(),
+        new BluetoothBeaconProvider(),
+        new AutoLinkLocationProvider(),
+        new SensorFusionProvider(),
+        new ManualProvider()
+      ],
+      'wifi'
+    );
+    this.locationProviders.start();
+
     this.navigationService = new NavigationService(this);
     this.askMaps = new AskMaps(this);
 
@@ -70,6 +92,7 @@ export class SmartMapsEngine {
 
   detach(): void {
     this.navigationService.destroy();
+    this.locationProviders.stop();
     this.bus.clear();
     this.map?.remove();
     this.map = undefined;

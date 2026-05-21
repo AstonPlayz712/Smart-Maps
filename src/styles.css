@@ -263,8 +263,91 @@ body {
   font-size: 11px;
 }
 
+.top-right-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.provider-chip-wrap { position: relative; }
+.provider-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(7, 11, 20, 0.6);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--pill-border);
+  border-radius: 999px;
+  padding: 6px 10px 6px 8px;
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.provider-chip:hover { border-color: rgba(255, 255, 255, 0.28); }
+.provider-icon {
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #0a0f1c;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+}
+.provider-label { color: var(--muted); }
+.provider-caret { color: var(--muted); font-size: 10px; margin-left: 2px; }
+
+.provider-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: rgba(7, 11, 20, 0.85);
+  backdrop-filter: blur(22px);
+  border: 1px solid var(--pill-border);
+  border-radius: 14px;
+  padding: 6px;
+  margin: 0;
+  list-style: none;
+  z-index: 30;
+  box-shadow: var(--shadow);
+}
+.provider-menu li { display: block; }
+.provider-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+.provider-menu button:hover:not([disabled]) {
+  background: rgba(255, 255, 255, 0.06);
+}
+.provider-menu button[disabled] { opacity: 0.45; cursor: not-allowed; }
+.provider-menu .primary button {
+  background: linear-gradient(135deg, rgba(92, 200, 255, 0.18), rgba(183, 139, 255, 0.14));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.provider-name { flex: 1; }
+.provider-meta {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
 @media (max-width: 540px) {
   .overlay.top { flex-direction: column; align-items: stretch; gap: 8px; }
   .overlay.top .brand { align-self: flex-start; }
-  .hud { top: 132px; }
+  .top-right-group { justify-content: flex-start; flex-wrap: wrap; }
+  .hud { top: 168px; }
+  .provider-menu { right: auto; left: 0; }
 }

@@ -69,13 +69,13 @@ export class NavigationService {
   private routeSubs = new Set<Subscriber<RouteListener>>();
   private stateSubs = new Set<Subscriber<NavigationStateListener>>();
 
-  private geoWatchId: number | null = null;
   private engineUnsubs: Unsubscribe[] = [];
+  private locationUnsub: Unsubscribe | null = null;
   private destroyed = false;
 
   constructor(private engine: SmartMapsEngine) {
-    const seeded = engine.navigation.getUserPosition();
-    if (seeded) this.location = seeded;
+    const seed = engine.locationProviders.getLocation();
+    if (seed) this.location = { lng: seed.lng, lat: seed.lat };
 
     this.engineUnsubs.push(
       engine.bus.on('route:done', ({ distanceMeters, durationSec }) => {
@@ -99,13 +99,12 @@ export class NavigationService {
       })
     );
 
-    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
-      this.geoWatchId = navigator.geolocation.watchPosition(
-        (pos) => this.updateLocation({ lng: pos.coords.longitude, lat: pos.coords.latitude }),
-        () => undefined,
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
-      );
-    }
+    // Location comes exclusively from LocationProviders. This is what lets the
+    // OS run on devices without GPS or SIM — the facade picks whichever
+    // provider (Wi-Fi, beacons, AutoLink, sensor fusion, manual) is healthy.
+    this.locationUnsub = engine.locationProviders.onLocationUpdate((fix) => {
+      this.updateLocation({ lng: fix.lng, lat: fix.lat });
+    });
   }
 
   // ─── public API ───────────────────────────────────────────────────────────
@@ -217,9 +216,8 @@ export class NavigationService {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
-    if (this.geoWatchId !== null && typeof navigator !== 'undefined') {
-      navigator.geolocation.clearWatch(this.geoWatchId);
-    }
+    this.locationUnsub?.();
+    this.locationUnsub = null;
     this.engineUnsubs.forEach((fn) => fn());
     this.engineUnsubs = [];
     this.locationSubs.clear();
@@ -231,6 +229,9 @@ export class NavigationService {
 
   private updateLocation(loc: LatLng): void {
     this.location = loc;
+    // Keep the engine's RouteEngine origin in sync so any direct drawRoute()
+    // call without an explicit `from` uses the live position.
+    this.engine.navigation.setUserLocation(loc);
     this.locationSubs.forEach((s) => this.safeFire(() => s.cb(loc)));
 
     if (this.state === 'navigating' && this.destination) {

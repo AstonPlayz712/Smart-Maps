@@ -33,23 +33,18 @@ export class ImmersiveNavigation {
     this.camera = new CinematicCamera(map);
     this.route = new RouteEngine(map, this.bus);
 
+    // Map-center fallback. The authoritative user location lives in
+    // LocationProviders / NavigationService now; this is only used when a
+    // direct caller of drawRoute() omits an origin.
     const c = map.getCenter();
     this.userPosition = { lng: c.lng, lat: c.lat };
     this.route.setUserLocation(this.userPosition);
+  }
 
-    // Best-effort geolocation upgrade. Stays silent on denial — the map center remains
-    // the "user" so the route demo always works regardless of permissions.
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const p: LatLng = { lng: pos.coords.longitude, lat: pos.coords.latitude };
-          this.userPosition = p;
-          this.route?.setUserLocation(p);
-        },
-        () => undefined,
-        { maximumAge: 60000, timeout: 4000 }
-      );
-    }
+  /** Lets the engine push a fresh origin into RouteEngine as the user moves. */
+  setUserLocation(p: LatLng): void {
+    this.userPosition = p;
+    this.route?.setUserLocation(p);
   }
 
   flyToPose(pose: CameraPose, opts: FlyToOpts = {}): void {

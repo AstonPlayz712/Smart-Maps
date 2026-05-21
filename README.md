@@ -90,7 +90,17 @@ src/
 │   ├── types.ts                ← shared types (CameraPose, POI, events)
 │   └── config.ts               ← tile URLs, terrain config
 ├── services/
-│   └── NavigationService.ts    ← THE NAVIGATION KERNEL (state + subscribers)
+│   ├── NavigationService.ts    ← THE NAVIGATION KERNEL (state + subscribers)
+│   └── location-providers/     ← THE LOCATION KERNEL (multi-provider facade)
+│       ├── LocationProviders.ts
+│       ├── BaseLocationProvider.ts
+│       ├── types.ts
+│       └── providers/
+│           ├── WiFiProvider.ts
+│           ├── BluetoothBeaconProvider.ts
+│           ├── AutoLinkLocationProvider.ts
+│           ├── SensorFusionProvider.ts
+│           └── ManualProvider.ts
 ├── modules/
 │   ├── smart-maps/             ← THE RENDERER
 │   │   ├── SmartMapsRenderer.ts
@@ -152,6 +162,51 @@ and `clear route` reach for `ctx.navigationService` rather than the engine's
 `ImmersiveNavigation` directly. `AutoLinkBridge` subscribes to all three streams
 on the `autolink` channel and currently logs to the console — replace its
 handlers with a transport adapter to push state to a companion device.
+
+## LocationProviders
+
+The OS keeps working on devices with no GPS and no SIM by abstracting the
+"where am I?" question behind a small registry. `LocationProviders` holds one
+instance of each source and decides which fix to commit:
+
+| Provider                     | Source / Mechanism                                            |
+| ---------------------------- | ------------------------------------------------------------- |
+| `WiFiProvider`               | `navigator.geolocation` with `enableHighAccuracy: false` — OS-level Wi-Fi / cell positioning |
+| `BluetoothBeaconProvider`    | Ingest `(beaconId, rssi)` detections; RSSI-weighted centroid across registered beacons |
+| `AutoLinkLocationProvider`   | Receiver for fixes pushed over the AutoLink transport from a companion device |
+| `SensorFusionProvider`       | DeviceMotion + DeviceOrientation dead reckoning, anchored by any absolute fix |
+| `ManualProvider`             | Developer / user-set fixed coordinates; the floor that never fails |
+
+```ts
+const fix = engine.locationProviders.getLocation();
+
+const off = engine.locationProviders.onLocationUpdate((fix) => {
+  console.log(fix.source, fix.lat, fix.lng, fix.accuracy);
+});
+
+// Switch primary source. Useful when GPS is dark indoors.
+engine.locationProviders.setPrimaryProvider('bluetooth');
+
+// Push a beacon detection from a native shim:
+engine.locationProviders.getProvider<BluetoothBeaconProvider>('bluetooth')
+  ?.feedDetection('beacon-42', -68);
+
+// Tell the system where you are when nothing else works:
+engine.locationProviders.getProvider<ManualProvider>('manual')
+  ?.setPosition(51.5007, -0.1245);
+```
+
+Acceptance policy:
+
+- The primary provider's fixes are always committed.
+- Other providers' fixes only commit when the primary has been silent for ≥ 8 s.
+- Any absolute fix re-seeds `SensorFusionProvider`, so dead reckoning stays
+  anchored across provider switches.
+
+`NavigationService` no longer touches `navigator.geolocation` directly — it
+subscribes to `LocationProviders.onLocationUpdate` and that's the entire
+location pipeline. A small `LocationProviderChip` in the top-right overlay
+shows the active source and lets you switch primary at runtime.
 
 ## Ask Maps grammar (cheat sheet)
 
