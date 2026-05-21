@@ -28,9 +28,9 @@ export class CinematicCamera {
       zoom: pose.zoom ?? opts.zoom ?? this.map.getZoom(),
       pitch: pose.pitch ?? opts.pitch ?? this.map.getPitch(),
       bearing: pose.bearing ?? opts.bearing ?? this.map.getBearing(),
-      duration: opts.duration ?? 2200,
-      curve: opts.curve ?? 1.42,
-      easing: easing.easeInOutCubic,
+      duration: opts.duration ?? 1800,
+      curve: opts.curve ?? 1.2,
+      easing: easing.easeInOutQuad,
       essential: true
     });
   }
@@ -44,7 +44,7 @@ export class CinematicCamera {
     const pitch = opts.pitch ?? 68;
     const speed = opts.speedDegPerSec ?? 10;
 
-    this.map.easeTo({ center, zoom, pitch, duration: 1200, easing: easing.easeInOutCubic });
+    this.map.easeTo({ center, zoom, pitch, duration: 1000, easing: easing.easeInOutQuad });
 
     let bearing = this.map.getBearing();
     let last = performance.now();

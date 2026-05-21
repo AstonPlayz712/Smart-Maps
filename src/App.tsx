@@ -6,6 +6,7 @@ import LocationSwitcher from './components/LocationSwitcher';
 import LocationProviderChip from './components/LocationProviderChip';
 import AutoExDebugOverlay from './components/AutoExDebugOverlay';
 import HUD from './components/HUD';
+import CameraControls from './components/CameraControls';
 import Toast from './components/Toast';
 import { SmartMapsEngine } from './engine/SmartMapsEngine';
 import { LOCATIONS, type LocationId } from './modules/smart-maps/locations';
@@ -97,6 +98,7 @@ export default function App() {
       </div>
 
       <HUD engine={engine ?? undefined} ready={ready} />
+      <CameraControls engine={engine ?? undefined} ready={ready} />
 
       <div className="overlay bottom">
         <AskMapsBar
