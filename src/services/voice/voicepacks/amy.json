@@ -1,0 +1,107 @@
+{
+  "id": "amy",
+  "displayName": "Amy",
+  "tagline": "Adventure time",
+  "voice": { "rate": 1.06, "pitch": 1.55, "volume": 1.0, "lang": "en-US" },
+  "events": {
+    "nav.start": [
+      "Yay, let's go!",
+      "Adventure time!",
+      "Buckle up, here we go!"
+    ],
+    "distance.approach": [
+      "{distance} to go, you've got this!",
+      "In {distance}, get ready!",
+      "Just {distance} more!"
+    ],
+    "turn.left": [
+      "Turn left, sweetie!",
+      "Left, dear!",
+      "Hang a left!"
+    ],
+    "turn.right": [
+      "Right turn, cutie!",
+      "Take a right!",
+      "Right, right, right!"
+    ],
+    "turn.left.onto": [
+      "Left onto {street}!",
+      "Take {street} on the left!"
+    ],
+    "turn.right.onto": [
+      "Right onto {street}!",
+      "Pop a right onto {street}!"
+    ],
+    "continue.straight": [
+      "Straight ahead, you're doing great!",
+      "Keep going, sweetie!",
+      "All the way through!"
+    ],
+    "keep.left": ["Stay left, dear!", "Keep left!"],
+    "keep.right": ["Stay right, dear!", "Keep right!"],
+    "roundabout.enter": [
+      "Roundabout — take exit {exit}!",
+      "Spin around to exit {exit}!"
+    ],
+    "roundabout.exit": [
+      "Exit {exit}, sweetie!",
+      "This one — exit {exit}!"
+    ],
+    "highway.merge": [
+      "Merging onto {road}!",
+      "Smooth merge onto {road}!"
+    ],
+    "highway.exit": [
+      "Take exit {exit}!",
+      "Exit {exit} — easy peasy!"
+    ],
+    "lane.guidance": [
+      "Stay in the {lane} lane!",
+      "{lane} lane is the one!"
+    ],
+    "long.distance": [
+      "Stay on {road} for {distance}!",
+      "Just cruise on {road} for {distance}."
+    ],
+    "recalculation": [
+      "Oopsie, new route!",
+      "Recalculating — no worries!",
+      "Let's try this way instead!"
+    ],
+    "arrival.near": ["Almost there!", "Just a bit more!"],
+    "arrival.destination": [
+      "We're here! Yay!",
+      "You did it!",
+      "Destination reached — I knew you'd make it!"
+    ],
+    "hazard.traffic": [
+      "Traffic ahead — careful!",
+      "Slow down, lots of cars!"
+    ],
+    "hazard.camera": [
+      "Slow down — speed camera!",
+      "Camera ahead, ease up!"
+    ],
+    "hazard.roadworks": [
+      "Roadworks — drive carefully!",
+      "Construction, slow down!"
+    ],
+    "in.junction.approach": [
+      "Sharp turn coming — focus!",
+      "Big junction ahead, careful!",
+      "Watch this one!"
+    ],
+    "in.curve.anticipation": [
+      "Curve ahead, ease in!",
+      "Smooth around the bend!"
+    ],
+    "in.lane.alignment": [
+      "Stay in your lane, you've got it!",
+      "Keep it centered!"
+    ],
+    "in.zoom.out": [
+      "Going fast — pulling back!",
+      "Wider view, you're zipping!"
+    ]
+  }
+}

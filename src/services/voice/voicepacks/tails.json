@@ -1,0 +1,107 @@
+{
+  "id": "tails",
+  "displayName": "Tails",
+  "tagline": "Co-pilot on call",
+  "voice": { "rate": 1.22, "pitch": 1.6, "volume": 1.0, "lang": "en-US" },
+  "events": {
+    "nav.start": [
+      "Course plotted! Heading out.",
+      "All systems go.",
+      "Navigation engaged — let's fly."
+    ],
+    "distance.approach": [
+      "Distance to next maneuver: {distance}.",
+      "{distance} until your turn.",
+      "Maneuver in {distance}."
+    ],
+    "turn.left": [
+      "Turn left up ahead.",
+      "Bank left.",
+      "Left turn coming up."
+    ],
+    "turn.right": [
+      "Turn right.",
+      "Bank right.",
+      "Right turn coming up."
+    ],
+    "turn.left.onto": [
+      "Turn left onto {street}.",
+      "Take a left onto {street}."
+    ],
+    "turn.right.onto": [
+      "Turn right onto {street}.",
+      "Take a right onto {street}."
+    ],
+    "continue.straight": [
+      "Continue forward.",
+      "Straight ahead.",
+      "Maintain heading."
+    ],
+    "keep.left": ["Keep to the left.", "Stay left."],
+    "keep.right": ["Keep to the right.", "Stay right."],
+    "roundabout.enter": [
+      "Entering roundabout — take exit {exit}.",
+      "Roundabout ahead, exit {exit}."
+    ],
+    "roundabout.exit": [
+      "Take exit {exit} now.",
+      "Exit {exit} — this one."
+    ],
+    "highway.merge": [
+      "Merge onto {road}.",
+      "Merging traffic onto {road}."
+    ],
+    "highway.exit": [
+      "Take exit {exit}.",
+      "Highway exit {exit} ahead."
+    ],
+    "lane.guidance": [
+      "Use the {lane} lane.",
+      "Stay in the {lane} lane."
+    ],
+    "long.distance": [
+      "Stay on {road} for {distance}.",
+      "Continue on {road} for {distance}."
+    ],
+    "recalculation": [
+      "Rerouting — done.",
+      "New path calculated.",
+      "Recomputing route."
+    ],
+    "arrival.near": ["Approaching destination.", "Almost there."],
+    "arrival.destination": [
+      "Arrived. That was efficient.",
+      "Destination reached.",
+      "Mission complete."
+    ],
+    "hazard.traffic": [
+      "Traffic detected ahead — caution.",
+      "Slow traffic on route."
+    ],
+    "hazard.camera": [
+      "Speed camera spotted — adjust speed.",
+      "Enforcement zone ahead."
+    ],
+    "hazard.roadworks": [
+      "Roadworks ahead — caution.",
+      "Construction zone reported."
+    ],
+    "in.junction.approach": [
+      "Junction coming up — focus.",
+      "Complex junction ahead.",
+      "Heads up — junction."
+    ],
+    "in.curve.anticipation": [
+      "Curve ahead — adjust line.",
+      "Bend coming up."
+    ],
+    "in.lane.alignment": [
+      "Hold your lane.",
+      "Lane locked."
+    ],
+    "in.zoom.out": [
+      "High speed detected — widening view.",
+      "Pulling the camera back."
+    ]
+  }
+}

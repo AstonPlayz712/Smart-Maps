@@ -1,0 +1,107 @@
+{
+  "id": "sonic",
+  "displayName": "Sonic",
+  "tagline": "Gotta go fast",
+  "voice": { "rate": 1.18, "pitch": 1.45, "volume": 1.0, "lang": "en-US" },
+  "events": {
+    "nav.start": [
+      "Alright, let's go go go!",
+      "Buckle up — Sonic speed engaged!",
+      "Route locked in. Try to keep up!"
+    ],
+    "distance.approach": [
+      "In {distance}, get ready!",
+      "{distance} to go — eyes up!",
+      "Coming up in {distance}!"
+    ],
+    "turn.left": [
+      "Hard left!",
+      "Crank it left!",
+      "Left, left, left!"
+    ],
+    "turn.right": [
+      "Hang a right!",
+      "Right turn, quick!",
+      "Right!"
+    ],
+    "turn.left.onto": [
+      "Left onto {street}!",
+      "Cut a left onto {street}!"
+    ],
+    "turn.right.onto": [
+      "Right onto {street}!",
+      "Swing right onto {street}!"
+    ],
+    "continue.straight": [
+      "Straight ahead, full throttle!",
+      "Keep rolling!",
+      "No brakes!"
+    ],
+    "keep.left": ["Keep left!", "Stay left!"],
+    "keep.right": ["Keep right!", "Stay right!"],
+    "roundabout.enter": [
+      "Roundabout — take exit {exit}!",
+      "Spin through, exit {exit}!"
+    ],
+    "roundabout.exit": [
+      "Exit {exit}, now!",
+      "This is your exit!"
+    ],
+    "highway.merge": [
+      "Merging onto {road}!",
+      "We're hitting {road} — flat out!"
+    ],
+    "highway.exit": [
+      "Take the {exit} exit!",
+      "Exit {exit} — easy!"
+    ],
+    "lane.guidance": [
+      "Stay in the {lane} lane!",
+      "{lane} lane — lock it in!"
+    ],
+    "long.distance": [
+      "Stay on {road} for {distance}.",
+      "Cruise on {road} — {distance} more."
+    ],
+    "recalculation": [
+      "Whoops — new plan!",
+      "Recalculating! Hang tight!",
+      "Off-route — fixing it!"
+    ],
+    "arrival.near": ["Almost there!", "Closing in!"],
+    "arrival.destination": [
+      "We made it! Too easy.",
+      "Destination reached. Piece of cake.",
+      "Boom — we're here!"
+    ],
+    "hazard.traffic": [
+      "Traffic ahead — ease up!",
+      "Slowdown — traffic!"
+    ],
+    "hazard.camera": [
+      "Speed trap! Take it easy.",
+      "Camera — chill the gas!"
+    ],
+    "hazard.roadworks": [
+      "Roadworks — slow it down!",
+      "Construction ahead!"
+    ],
+    "in.junction.approach": [
+      "Sharp turn — focus!",
+      "Turn coming hot!",
+      "Watch this corner!"
+    ],
+    "in.curve.anticipation": [
+      "Bend ahead — line it up!",
+      "Curve coming!"
+    ],
+    "in.lane.alignment": [
+      "Lock the lane!",
+      "Hold the line!"
+    ],
+    "in.zoom.out": [
+      "Picking up speed — wider view!",
+      "Going fast — pull back!"
+    ]
+  }
+}

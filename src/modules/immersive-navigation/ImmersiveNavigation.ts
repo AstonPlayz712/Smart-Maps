@@ -57,6 +57,11 @@ export class ImmersiveNavigation {
   private immersive = false;
   private immersiveDestination: LatLng | null = null;
 
+  // IN state-change flags — used to emit bus events only on transitions so
+  // downstream listeners (voice engine) don't fire on every per-tick update.
+  private lastInJunction = false;
+  private lastZoomedOut = false;
+
   constructor(private bus: EventBus<EngineEvents>) {}
 
   attach(map: MlMap): void {
@@ -150,6 +155,8 @@ export class ImmersiveNavigation {
     if (!this.map) return;
     this.immersive = true;
     this.immersiveDestination = destination;
+    this.lastInJunction = false;
+    this.lastZoomedOut = false;
     const lookahead = this.lookaheadPoint(loc, 0);
     const initialBearing = bearing(loc, lookahead);
 
@@ -163,23 +170,31 @@ export class ImmersiveNavigation {
       duration: IN_ENTER_DURATION_MS,
       easing: easing.easeInOutQuad
     });
+    this.bus.emit('in:enter', { destination });
   }
 
   exitImmersive(): void {
+    const wasImmersive = this.immersive;
     if (!this.immersive || !this.map) {
       this.immersive = false;
       this.immersiveDestination = null;
+      this.lastInJunction = false;
+      this.lastZoomedOut = false;
       this.route?.setJunctionMode(false);
+      if (wasImmersive) this.bus.emit('in:exit', undefined);
       return;
     }
     this.immersive = false;
     this.immersiveDestination = null;
+    this.lastInJunction = false;
+    this.lastZoomedOut = false;
     this.route?.setJunctionMode(false);
     this.map.easeTo({
       pitch: 60,
       duration: IN_EXIT_DURATION_MS,
       easing: easing.easeInOutQuad
     });
+    this.bus.emit('in:exit', undefined);
   }
 
   updateFollow(loc: LatLng, speedMps: number): void {
@@ -193,8 +208,9 @@ export class ImmersiveNavigation {
     const lookahead = this.lookaheadPoint(loc, lookaheadM);
     const targetBearing = bearing(loc, lookahead);
 
+    const zoomedOut = speedMps >= SPEED_FAST_MPS;
     let zoom = IN_BASE_ZOOM;
-    if (speedMps >= SPEED_FAST_MPS) zoom = IN_FAST_ZOOM;
+    if (zoomedOut) zoom = IN_FAST_ZOOM;
     else if (speedMps < SPEED_SLOW_MPS) zoom = IN_SLOW_ZOOM;
     if (inJunction) zoom += IN_JUNCTION_ZOOM_DELTA;
 
@@ -208,6 +224,17 @@ export class ImmersiveNavigation {
       duration: IN_FOLLOW_DURATION_MS,
       easing: easing.easeInOutQuad
     });
+
+    // State-change events for the voice engine — only emit on transitions so
+    // listeners don't fire on every per-tick update.
+    if (inJunction !== this.lastInJunction) {
+      this.lastInJunction = inJunction;
+      this.bus.emit('in:junction', { inJunction, distanceMeters: remaining });
+    }
+    if (zoomedOut !== this.lastZoomedOut) {
+      this.lastZoomedOut = zoomedOut;
+      if (zoomedOut) this.bus.emit('in:zoomout', { speedMps });
+    }
   }
 
   isImmersive(): boolean {

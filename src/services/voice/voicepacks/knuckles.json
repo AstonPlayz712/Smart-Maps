@@ -1,0 +1,99 @@
+{
+  "id": "knuckles",
+  "displayName": "Knuckles",
+  "tagline": "Just drive",
+  "voice": { "rate": 0.92, "pitch": 0.7, "volume": 1.0, "lang": "en-US" },
+  "events": {
+    "nav.start": [
+      "Move out.",
+      "Drive.",
+      "Let's get this over with."
+    ],
+    "distance.approach": [
+      "{distance}.",
+      "{distance} more.",
+      "In {distance}."
+    ],
+    "turn.left": ["Go left.", "Left.", "Hit the left."],
+    "turn.right": ["Right.", "Take a right.", "Hit the right."],
+    "turn.left.onto": [
+      "Left onto {street}.",
+      "{street}. Left."
+    ],
+    "turn.right.onto": [
+      "Right onto {street}.",
+      "{street}. Right."
+    ],
+    "continue.straight": [
+      "Keep going.",
+      "Forward.",
+      "Straight."
+    ],
+    "keep.left": ["Stay left.", "Hold the left."],
+    "keep.right": ["Stay right.", "Hold the right."],
+    "roundabout.enter": [
+      "Roundabout. Exit {exit}.",
+      "Take {exit}."
+    ],
+    "roundabout.exit": [
+      "Exit {exit}. Now.",
+      "{exit}. Out."
+    ],
+    "highway.merge": [
+      "Onto {road}.",
+      "Merge. {road}."
+    ],
+    "highway.exit": [
+      "Exit {exit}.",
+      "{exit}. Off here."
+    ],
+    "lane.guidance": [
+      "{lane} lane.",
+      "Stay {lane}."
+    ],
+    "long.distance": [
+      "Stay on {road}. {distance}.",
+      "{road}. {distance} more."
+    ],
+    "recalculation": [
+      "Wrong way. Fixing it.",
+      "Pft. Recalculating.",
+      "Try again."
+    ],
+    "arrival.near": ["Almost.", "Nearly there."],
+    "arrival.destination": [
+      "Here. Get out.",
+      "We're here.",
+      "Done."
+    ],
+    "hazard.traffic": [
+      "Traffic. Slow down.",
+      "Traffic in front."
+    ],
+    "hazard.camera": [
+      "Camera. Ease off.",
+      "Cops."
+    ],
+    "hazard.roadworks": [
+      "Roadworks. Slow.",
+      "Construction. Watch it."
+    ],
+    "in.junction.approach": [
+      "Big turn ahead. Don't blow it.",
+      "Turn. Now.",
+      "Focus."
+    ],
+    "in.curve.anticipation": [
+      "Bend. Hold the line.",
+      "Curve."
+    ],
+    "in.lane.alignment": [
+      "Lane. Hold it.",
+      "Straight in the lane."
+    ],
+    "in.zoom.out": [
+      "Speed. Pulling back.",
+      "Fast. View out."
+    ]
+  }
+}

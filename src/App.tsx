@@ -4,6 +4,7 @@ import MapView from './components/MapView';
 import AskMapsBar from './components/AskMapsBar';
 import LocationSwitcher from './components/LocationSwitcher';
 import LocationProviderChip from './components/LocationProviderChip';
+import VoiceSelector from './components/VoiceSelector';
 import AutoExDebugOverlay from './components/AutoExDebugOverlay';
 import HUD from './components/HUD';
 import CameraControls from './components/CameraControls';
@@ -88,6 +89,7 @@ export default function App() {
           Smart Maps <span className="brand-os">OS</span>
         </div>
         <div className="top-right-group">
+          <VoiceSelector engine={engine ?? undefined} />
           <LocationProviderChip engine={engine ?? undefined} />
           <LocationSwitcher
             locations={LOCATIONS}

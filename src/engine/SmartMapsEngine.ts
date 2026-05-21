@@ -8,6 +8,7 @@ import { LOCATIONS, type LocationId } from '../modules/smart-maps/locations';
 import { POIS } from '../data/pois';
 import { NavigationService } from '../services/NavigationService';
 import { LocationProviders } from '../services/location-providers/LocationProviders';
+import { VoiceEngine } from '../services/voice/VoiceEngine';
 import { WiFiProvider } from '../services/location-providers/providers/WiFiProvider';
 import { BluetoothBeaconProvider } from '../services/location-providers/providers/BluetoothBeaconProvider';
 import { AutoExLocationProvider } from '../services/location-providers/providers/AutoExLocationProvider';
@@ -41,6 +42,7 @@ export class SmartMapsEngine {
   readonly navigation: ImmersiveNavigation;
   readonly locationProviders: LocationProviders;
   readonly navigationService: NavigationService;
+  readonly voice: VoiceEngine;
   readonly askMaps: AskMaps;
 
   constructor(opts: EngineOptions) {
@@ -63,6 +65,8 @@ export class SmartMapsEngine {
     this.locationProviders.start();
 
     this.navigationService = new NavigationService(this);
+    this.voice = new VoiceEngine(this);
+    this.voice.start();
     this.askMaps = new AskMaps(this);
 
     if (opts.onReady) this.bus.on('engine:ready', opts.onReady);
@@ -91,6 +95,7 @@ export class SmartMapsEngine {
   }
 
   detach(): void {
+    this.voice.destroy();
     this.navigationService.destroy();
     this.locationProviders.stop();
     this.bus.clear();

@@ -28,4 +28,12 @@ export type EngineEvents = {
   'route:clear': undefined;
   'camera:move': CameraPose;
   'mode:change': StyleMode;
+  /** IN follow camera entered (state-change only, not per-tick). */
+  'in:enter': { destination: LatLng };
+  /** IN follow camera exited. */
+  'in:exit': undefined;
+  /** IN junction approach flipped (inJunction true → entering; false → leaving). */
+  'in:junction': { inJunction: boolean; distanceMeters: number };
+  /** IN camera switched to wider FOV because of high speed. */
+  'in:zoomout': { speedMps: number };
 };
