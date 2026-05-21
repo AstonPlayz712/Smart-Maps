@@ -132,6 +132,47 @@ on the device. Wi-Fi Direct, BLE, and the bridge as a whole still fail
 gracefully if no transport is available; the app continues to function as a
 pure-host map with no companion link.
 
+## Android build via Ionic Appflow
+
+The Android platform sits next to iOS under `android/`. Package id is
+`com.smartmaps.handheld`, min SDK 23, target SDK 34, `versionCode 1`,
+`versionName "1.0.0"`. Kotlin `MainActivity` extending `BridgeActivity`.
+Release builds enable `minifyEnabled` + `shrinkResources` so the AAB lands
+under Google Play's size limits.
+
+**Manifest permissions:** `INTERNET`, `ACCESS_NETWORK_STATE`,
+`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `ACTIVITY_RECOGNITION`.
+
+**Appflow → AAB:**
+
+1. Push the branch.
+2. In Appflow, **New build → Android**.
+3. Build type: **Release**.
+4. Build format: **Android App Bundle (.aab)**.
+5. Web build: **Auto** (Appflow runs `npm ci` then `npm run build`).
+6. Capacitor sync: **Yes** (Appflow runs `npx cap sync android`).
+7. Signing certificate: upload your **upload keystore** (Account → Certificates → Android). For internal testing you can use a debug keystore; for Play Store you need an upload key Google can verify.
+8. Start build. Appflow runs Gradle and produces an `app-release.aab`.
+
+**Google Play Console → first upload:**
+
+1. In Play Console create a new app: name **Smart Maps OS**, default language English, app type **App**, free.
+2. Complete the **App content** declarations (privacy policy URL, target audience, data safety form — location is collected, motion is collected; no data sold).
+3. Set up **App access** (if any sign-in is required — for this proto, mark "All functionality is available without restrictions").
+4. **Production → Create new release** (or **Internal testing** for first round).
+5. Upload the AAB from Appflow.
+6. Fill in release notes, save, **Send for review**.
+7. For the first version Google may require completing the data-safety questionnaire, content rating, and a privacy policy URL hosted somewhere public.
+
+**Sideload-only path (no Play Store):**
+
+- In Appflow build, choose **APK** instead of AAB.
+- Download the APK from the build summary on your phone.
+- Open it; Android prompts to install from unknown sources — allow once.
+
+The AutoEx WebSocket transport already self-disables inside Capacitor on
+Android too, so no `ws://localhost` connect attempts happen on the device.
+
 ## Architecture
 
 The repo is organised so each module is independently swappable:

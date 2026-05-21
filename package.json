@@ -9,9 +9,12 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc -b",
-    "capacitor:sync": "echo 'sync handled by Appflow'"
+    "capacitor:sync": "echo 'sync handled by Appflow'",
+    "capacitor:sync:android": "echo 'sync handled by Appflow'",
+    "capacitor:sync:ios": "echo 'sync handled by Appflow'"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
     "@capacitor/core": "^6.1.2",
     "@capacitor/ios": "^6.1.2",
     "maplibre-gl": "^4.7.1",
