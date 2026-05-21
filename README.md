@@ -78,6 +78,60 @@ No API keys required. Tiles come from [OpenFreeMap](https://openfreemap.org)
 (OpenMapTiles schema, including building polygons) and terrain DEM tiles
 from AWS's public Open Terrain bucket.
 
+## iOS build via Ionic Appflow
+
+The repo is wired up for [Capacitor](https://capacitorjs.com) 6 with an iOS
+native project under `ios/App/`. Appflow builds the iOS binary in the cloud —
+no local Xcode required. The whole flow from your phone is:
+
+1. **Push the branch to GitHub** (`claude/build-smart-maps-engine-YbFwj` or main).
+2. In Appflow, connect this repo to a new app (if not already done). Pick the
+   branch you want to build.
+3. Add a **signing certificate** to Appflow (Account → Certificates) — even
+   for development builds you need a provisioning profile / signing identity.
+4. Start an **iOS Native build**:
+   - Platform: **iOS**
+   - Build type: **Development** (or Ad Hoc, when distributing to test
+     devices outside your team)
+   - Web build: **Auto** (Appflow runs `npm ci` then `npm run build`)
+   - Capacitor sync: **Yes** (Appflow auto-runs `npx cap sync ios`)
+   - Signing certificate: the one from step 3
+5. When the build completes, Appflow surfaces an installer link. Open it on
+   the iPhone 11 in **Safari** → **Install**. iOS may ask you to trust the
+   developer profile under **Settings → General → VPN & Device Management**.
+
+The Capacitor + iOS scaffolding is already committed:
+
+- `capacitor.config.ts` — appId `com.smartmaps.os`, appName `Smart Maps OS`,
+  webDir `dist`, server.cleartext `true`.
+- `ios/App/Podfile` — pulls `Capacitor` and `CapacitorCordova` from the
+  `@capacitor/ios` npm package.
+- `ios/App/App.xcodeproj` — Xcode project with Debug + Release configurations,
+  iOS 13 deployment target, automatic code signing, bundle id
+  `com.smartmaps.os`.
+- `ios/App/App/Info.plist` — declares location, motion, Bluetooth, and local
+  network permission strings. Background modes are declared in a comment
+  block, **disabled** for the proto (uncomment when you actually need
+  background location).
+- `ios/App/App/{AppDelegate,ViewController,CapacitorBridge}.swift` — standard
+  Capacitor bridge wiring.
+- `ios/App/App/public/` — placeholder; Appflow's sync step replaces it with
+  the Vite `dist/` build on every run (gitignored).
+
+**Permissions baked into Info.plist:**
+- `NSLocationWhenInUseUsageDescription`
+- `NSLocationAlwaysAndWhenInUseUsageDescription`
+- `NSLocationAlwaysUsageDescription`
+- `NSMotionUsageDescription`
+- `NSBluetoothAlwaysUsageDescription`, `NSBluetoothPeripheralUsageDescription`
+- `NSLocalNetworkUsageDescription`
+
+The AutoEx `LocalWebSocketTransport` now self-disables when it detects it's
+running inside Capacitor — no more 1.5 s connect timeouts to `ws://localhost`
+on the device. Wi-Fi Direct, BLE, and the bridge as a whole still fail
+gracefully if no transport is available; the app continues to function as a
+pure-host map with no companion link.
+
 ## Architecture
 
 The repo is organised so each module is independently swappable:

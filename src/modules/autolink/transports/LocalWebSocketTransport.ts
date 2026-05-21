@@ -26,7 +26,17 @@ export class LocalWebSocketTransport extends BaseTransport {
   }
 
   isAvailable(): boolean {
-    return typeof WebSocket !== 'undefined';
+    if (typeof WebSocket === 'undefined') return false;
+    // Skip `ws://localhost:8765` when running inside Capacitor — no dev relay
+    // lives on the iPhone, and ATS plus the lack of a server would mean a
+    // pointless 1.5 s connect timeout on every launch.
+    if (
+      typeof window !== 'undefined' &&
+      (window as { Capacitor?: unknown }).Capacitor
+    ) {
+      return false;
+    }
+    return true;
   }
 
   async connect(): Promise<void> {
