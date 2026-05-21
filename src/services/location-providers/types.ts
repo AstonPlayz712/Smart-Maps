@@ -1,7 +1,7 @@
 export type ProviderId =
   | 'wifi'
   | 'bluetooth'
-  | 'autolink'
+  | 'autoex'
   | 'sensor-fusion'
   | 'manual';
 

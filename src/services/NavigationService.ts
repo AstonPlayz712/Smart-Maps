@@ -14,7 +14,7 @@ import type { LatLng } from '../engine/types';
 export type NavigationState = 'idle' | 'starting' | 'navigating' | 'arrived' | 'stopped';
 
 /** Tag for the originating module of a subscription. Useful for diagnostics. */
-export type SubscriberChannel = 'autolink' | 'ask-maps' | 'ui';
+export type SubscriberChannel = 'autoex' | 'ask-maps' | 'ui';
 
 export interface NavigationRoute {
   origin: LatLng;
@@ -52,10 +52,10 @@ const ARRIVAL_THRESHOLD_M = 35;
  *   • current route             (the active polyline + ETA bundle)
  *   • navigation state          (idle / starting / navigating / arrived / stopped)
  *   • destination               (the lat/lng the user is heading to)
- *   • subscribers               (tagged by channel: autolink · ask-maps · ui)
+ *   • subscribers               (tagged by channel: autoex · ask-maps · ui)
  *
  * Exposes a small surface (startNavigation / stopNavigation + three subscribe
- * methods). Every other module — UI, Ask Maps, AutoLink — coordinates through
+ * methods). Every other module — UI, Ask Maps, AutoEx — coordinates through
  * this service, not the engine. The service in turn calls the engine for the
  * primitive renderer-side work (drawing the polyline, panning the camera).
  */
@@ -101,7 +101,7 @@ export class NavigationService {
 
     // Location comes exclusively from LocationProviders. This is what lets the
     // OS run on devices without GPS or SIM — the facade picks whichever
-    // provider (Wi-Fi, beacons, AutoLink, sensor fusion, manual) is healthy.
+    // provider (Wi-Fi, beacons, AutoEx, sensor fusion, manual) is healthy.
     this.locationUnsub = engine.locationProviders.onLocationUpdate((fix) => {
       this.updateLocation({ lng: fix.lng, lat: fix.lat });
     });
@@ -200,10 +200,10 @@ export class NavigationService {
     };
   }
 
-  /** Inspect subscriber counts per channel. Handy for debugging AutoLink wiring. */
+  /** Inspect subscriber counts per channel. Handy for debugging AutoEx wiring. */
   getSubscriberCounts(): Record<SubscriberChannel, { location: number; route: number; state: number }> {
     const acc: Record<SubscriberChannel, { location: number; route: number; state: number }> = {
-      autolink: { location: 0, route: 0, state: 0 },
+      autoex: { location: 0, route: 0, state: 0 },
       'ask-maps': { location: 0, route: 0, state: 0 },
       ui: { location: 0, route: 0, state: 0 }
     };

@@ -107,7 +107,7 @@ export class LocationProviders {
     this.primaryId = providerId;
 
     // Make sure the new primary is producing. Push-driven providers (manual,
-    // autolink, bluetooth) are no-op `start`s; scanners (wifi, sensors) will
+    // autoex, bluetooth) are no-op `start`s; scanners (wifi, sensors) will
     // begin emitting on next event.
     this.providers.get(providerId)?.start();
 

@@ -4,14 +4,17 @@ import MapView from './components/MapView';
 import AskMapsBar from './components/AskMapsBar';
 import LocationSwitcher from './components/LocationSwitcher';
 import LocationProviderChip from './components/LocationProviderChip';
+import AutoExDebugOverlay from './components/AutoExDebugOverlay';
 import HUD from './components/HUD';
 import Toast from './components/Toast';
 import { SmartMapsEngine } from './engine/SmartMapsEngine';
 import { LOCATIONS, type LocationId } from './modules/smart-maps/locations';
-import { AutoLinkBridge } from './modules/autolink/AutoLinkBridge';
+import { AutoExBridge } from './modules/autolink/AutoExBridge';
+import type { AutoExLocationProvider } from './services/location-providers/providers/AutoExLocationProvider';
 
 export default function App() {
   const [engine, setEngine] = useState<SmartMapsEngine | null>(null);
+  const [bridge, setBridge] = useState<AutoExBridge | null>(null);
   const [ready, setReady] = useState(false);
   const [activeLocation, setActiveLocation] = useState<LocationId>('london');
   const [toast, setToast] = useState<string | null>(null);
@@ -27,12 +30,23 @@ export default function App() {
     });
     setEngine(e);
 
-    // AutoLink module — talks ONLY to the navigation service, never the engine.
-    const autoLink = new AutoLinkBridge(e.navigationService);
-    autoLink.start();
+    // AutoEx — external transport bridge. Forwards navigation events out to
+    // an AutoOSM companion (when one is connected) and routes inbound
+    // `location:fix` packets into the AutoEx location provider.
+    const b = new AutoExBridge();
+    b.attachNavigationService(e.navigationService);
+    const autoexProvider = e.locationProviders.getProvider<AutoExLocationProvider>('autoex');
+    if (autoexProvider) b.attachLocationProvider(autoexProvider);
+    // Best-effort: try to connect now. Wi-Fi Direct is normally unavailable in
+    // browsers (stub), BLE needs a user gesture, so this usually falls through
+    // to WebSocket — which fails silently when no relay is running. The dev
+    // overlay surfaces all of that and offers a Retry button.
+    void b.connect();
+    setBridge(b);
 
     return () => {
-      autoLink.stop();
+      b.destroy();
+      setBridge(null);
       e.detach();
       setEngine(null);
       setReady(false);
@@ -108,6 +122,8 @@ export default function App() {
           }
         />
       </div>
+
+      {import.meta.env.DEV && <AutoExDebugOverlay bridge={bridge} />}
 
       <Toast message={toast} />
     </div>

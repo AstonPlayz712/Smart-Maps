@@ -10,7 +10,7 @@ import { NavigationService } from '../services/NavigationService';
 import { LocationProviders } from '../services/location-providers/LocationProviders';
 import { WiFiProvider } from '../services/location-providers/providers/WiFiProvider';
 import { BluetoothBeaconProvider } from '../services/location-providers/providers/BluetoothBeaconProvider';
-import { AutoLinkLocationProvider } from '../services/location-providers/providers/AutoLinkLocationProvider';
+import { AutoExLocationProvider } from '../services/location-providers/providers/AutoExLocationProvider';
 import { SensorFusionProvider } from '../services/location-providers/providers/SensorFusionProvider';
 import { ManualProvider } from '../services/location-providers/providers/ManualProvider';
 
@@ -54,7 +54,7 @@ export class SmartMapsEngine {
       [
         new WiFiProvider(),
         new BluetoothBeaconProvider(),
-        new AutoLinkLocationProvider(),
+        new AutoExLocationProvider(),
         new SensorFusionProvider(),
         new ManualProvider()
       ],

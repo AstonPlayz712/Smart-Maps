@@ -115,8 +115,15 @@ src/
 │   │   ├── AskMaps.ts
 │   │   ├── CommandParser.ts
 │   │   └── commandRegistry.ts
-│   └── autolink/               ← COMPANION-DEVICE BRIDGE
-│       └── AutoLinkBridge.ts   (subscribes via 'autolink' channel)
+│   └── autolink/               ← EXTERNAL TRANSPORT BRIDGE  (folder kept;
+│       │                         the name "AutoLink" is reserved for the AI
+│       │                         router inside AutoOSM)
+│       ├── AutoExBridge.ts     (transport-selecting facade, autoex channel)
+│       └── transports/
+│           ├── Transport.ts
+│           ├── WiFiDirectTransport.ts
+│           ├── BluetoothLETransport.ts
+│           └── LocalWebSocketTransport.ts
 ├── components/                 ← thin React surfaces
 │   ├── MapView.tsx
 │   ├── AskMapsBar.tsx
@@ -159,9 +166,50 @@ The engine deliberately no longer wires map clicks to routing itself — that
 belongs to the UI. `App.tsx` binds `map.on('click', …)` to
 `navigationService.startNavigation(...)`. Ask Maps commands like `route to Big Ben`
 and `clear route` reach for `ctx.navigationService` rather than the engine's
-`ImmersiveNavigation` directly. `AutoLinkBridge` subscribes to all three streams
-on the `autolink` channel and currently logs to the console — replace its
-handlers with a transport adapter to push state to a companion device.
+`ImmersiveNavigation` directly. `AutoExBridge` subscribes to all three streams
+on the `autoex` channel and forwards them out over whichever transport is live.
+
+## AutoExBridge — external transport layer
+
+`AutoExBridge` is the wire between Smart Maps OS and a companion device
+(AutoOSM HUD, watch, glasses, …). The bridge picks the first available
+transport at runtime:
+
+| # | Transport          | Implementation                                                |
+| - | ------------------ | ------------------------------------------------------------- |
+| 1 | Wi-Fi Direct       | `navigator.wifi?.connect(...)` stub; opt-in dev simulation via `localStorage.setItem('smartmaps.wifidirect', 'enabled')` |
+| 2 | Bluetooth LE       | Web Bluetooth, AutoEx service UUID `f3a01c00-9f7e-…`, reconnect at 1 s / 2 s / 4 s |
+| 3 | Local WebSocket    | `ws://localhost:8765` JSON relay; dev fallback                |
+
+Each transport implements the `Transport` interface
+(`connect / disconnect / send / onMessage / getStatus`). `AutoExBridge` exposes
+the facade:
+
+```ts
+const bridge = new AutoExBridge();
+await bridge.connect();
+bridge.send('navigation:state', { state: 'navigating' });
+bridge.on('location:fix', (payload) => console.log(payload));
+const { status, transport } = bridge.getStatus();
+```
+
+Outbound wiring: `bridge.attachNavigationService(engine.navigationService)`
+subscribes to all three navigation streams and forwards them as
+`navigation:state`, `navigation:route`, and `navigation:location` packets.
+
+Inbound wiring: `bridge.attachLocationProvider(engine.locationProviders.getProvider('autoex'))`
+pipes incoming `location:fix` packets into `AutoExLocationProvider.pushFix(...)`,
+which surfaces them through `LocationProviders`. The fix's `source` is
+`'autoex'` — set `setPrimaryProvider('autoex')` to make the OS run entirely off
+the companion's positioning when the host has no GPS or SIM.
+
+A dev-only `AutoExDebugOverlay` (mounted when `import.meta.env.DEV` is true)
+shows the active transport, link status, the last packet sent/received, and
+candidate transport availability.
+
+> **Name note:** the directory is still `src/modules/autolink/` for path
+> stability, but "AutoLink" is reserved for the AI router inside AutoOSM. The
+> code uses `AutoEx` everywhere — the external bridge.
 
 ## LocationProviders
 

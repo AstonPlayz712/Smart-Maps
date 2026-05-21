@@ -9,7 +9,7 @@ interface Props {
 const ICON: Record<ProviderId, string> = {
   wifi: '⌖',
   bluetooth: 'ᛒ',
-  autolink: '⌬',
+  autoex: '⌬',
   'sensor-fusion': '◉',
   manual: '✎'
 };

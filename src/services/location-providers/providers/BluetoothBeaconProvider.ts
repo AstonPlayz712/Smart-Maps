@@ -23,7 +23,7 @@ const DETECTION_TTL_MS = 8000;
  *
  *   • `registerBeacon` — declare a known beacon's position
  *   • `feedDetection`  — push a (beaconId, rssi) reading from a native shim,
- *                        an AutoLink companion device, or a synthetic source
+ *                        an AutoEx companion device, or a synthetic source
  *
  * The provider trilaterates with an RSSI-weighted centroid across whatever
  * detections are still within their TTL window. Good-enough for indoor

@@ -2,17 +2,17 @@ import { BaseLocationProvider } from '../BaseLocationProvider';
 import type { LocationFix, ProviderId } from '../types';
 
 /**
- * AutoLink location stream. The AutoLink companion device (in-car HUD, watch,
- * glasses) pushes fixes here over the AutoLink transport. The provider is
- * purely a receiver — `start` flips a gate, `pushFix` is how upstream code
- * drops new positions in.
+ * AutoEx location stream. The companion device (AutoOSM HUD, watch, glasses,
+ * roof-mounted GNSS, …) pushes fixes here over the AutoEx transport. The
+ * provider is purely a receiver — `start` flips a gate, `pushFix` is how the
+ * AutoExBridge drops new positions in after decoding `location:fix` packets.
  *
  * This makes Smart Maps OS work on devices with no GPS and no SIM: the
  * companion does the locating, the headless host displays it.
  */
-export class AutoLinkLocationProvider extends BaseLocationProvider {
-  readonly id: ProviderId = 'autolink';
-  readonly name = 'AutoLink Stream';
+export class AutoExLocationProvider extends BaseLocationProvider {
+  readonly id: ProviderId = 'autoex';
+  readonly name = 'AutoEx Stream';
 
   isAvailable(): boolean {
     return true;
