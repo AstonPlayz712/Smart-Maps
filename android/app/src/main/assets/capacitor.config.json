@@ -1,0 +1,8 @@
+{
+	"appId": "com.smartmaps.os",
+	"appName": "Smart Maps OS",
+	"webDir": "dist",
+	"server": {
+		"cleartext": true
+	}
+}

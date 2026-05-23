@@ -1,11 +1,10 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.smartmaps.handheld"
+    namespace "com.smartmaps.os"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.smartmaps.handheld"
+        applicationId "com.smartmaps.os"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -19,13 +18,9 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-    kotlinOptions {
-        jvmTarget = '17'
     }
 }
 

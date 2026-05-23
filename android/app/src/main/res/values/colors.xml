@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Smart Maps OS brand palette -->
+    <!-- Smart Maps OS brand palette. styles.xml references @color/colorPrimary
+         etc., but Capacitor's template doesn't ship a colors.xml — without
+         this file the build fails with "resource color/colorPrimary not found". -->
     <color name="colorPrimary">#070b14</color>
     <color name="colorPrimaryDark">#040611</color>
     <color name="colorAccent">#00E5FF</color>
