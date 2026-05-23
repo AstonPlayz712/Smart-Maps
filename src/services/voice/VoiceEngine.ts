@@ -220,9 +220,17 @@ export class VoiceEngine {
       u.pitch = pack.voice.pitch;
       u.volume = pack.voice.volume;
       u.lang = pack.voice.lang;
+      // Bus events so navigation-aware media services (Spotify Connect) can
+      // duck playback for the duration of the line.
+      const onEnd = () => this.engine.bus.emit('voice:speak-end', undefined);
+      u.onend = onEnd;
+      u.onerror = onEnd;
+      this.engine.bus.emit('voice:speak-start', { text });
       window.speechSynthesis.speak(u);
     } catch (err) {
       console.warn('[VoiceEngine] TTS failed', err);
+      // Make sure ducking gets released even if synthesis blew up.
+      this.engine.bus.emit('voice:speak-end', undefined);
     }
   }
 
@@ -234,6 +242,9 @@ export class VoiceEngine {
         /* noop */
       }
     }
+    // Always release the duck — speechSynthesis.cancel doesn't fire onend
+    // reliably on all platforms.
+    this.engine.bus.emit('voice:speak-end', undefined);
   }
 
   // ─── persistence ─────────────────────────────────────────────────────────

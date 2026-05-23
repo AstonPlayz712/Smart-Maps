@@ -36,4 +36,8 @@ export type EngineEvents = {
   'in:junction': { inJunction: boolean; distanceMeters: number };
   /** IN camera switched to wider FOV because of high speed. */
   'in:zoomout': { speedMps: number };
+  /** VoiceEngine started speaking an utterance. Media services duck on this. */
+  'voice:speak-start': { text: string };
+  /** VoiceEngine finished (or cancelled) an utterance. */
+  'voice:speak-end': undefined;
 };
