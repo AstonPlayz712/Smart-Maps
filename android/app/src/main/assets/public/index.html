@@ -7,10 +7,69 @@
     <meta name="description" content="Smart Maps OS — unified SM·IN·AM proto: smart renderer, immersive cinematic navigation, and natural-language Ask Maps." />
     <title>Smart Maps OS</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script type="module" crossorigin src="/assets/index-A3sT6m8U.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CvSxMwGB.css">
+    <style>
+      /* Boot Stability Layer — inline so it works before the JS bundle loads.
+         The overlay shows immediately; it self-destructs once main.tsx signals
+         boot success, or morphs into a Safe Mode fallback if 8 s pass first. */
+      html, body { margin: 0; background: #070b14; color: #f5f7fb;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+        height: 100%; overflow: hidden; -webkit-font-smoothing: antialiased; }
+      #sm-boot { position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 16px; z-index: 9999;
+        background: #070b14; padding: 32px; text-align: center;
+        transition: opacity 200ms linear; }
+      #sm-boot.sm-boot-hidden { opacity: 0; pointer-events: none; }
+      .sm-boot-spinner { width: 36px; height: 36px; border: 2px solid rgba(255,255,255,0.14);
+        border-top-color: #00E5FF; border-radius: 999px; animation: sm-spin 0.8s linear infinite; }
+      @keyframes sm-spin { to { transform: rotate(360deg); } }
+      .sm-boot-text { font-size: 12px; color: #8a93a8; letter-spacing: 0.1em; text-transform: uppercase; }
+      .sm-boot-fallback { display: flex; flex-direction: column; align-items: stretch; gap: 12px; max-width: 360px; }
+      .sm-boot-title { font-size: 18px; font-weight: 500; color: #fff; letter-spacing: 0.04em; }
+      .sm-boot-fallback p { margin: 0; color: #8a93a8; font-size: 13px; line-height: 1.45; }
+      .sm-boot-fallback button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.22);
+        padding: 10px 16px; font-family: inherit; font-size: 11px; cursor: pointer;
+        letter-spacing: 0.08em; text-transform: uppercase; }
+      .sm-boot-fallback button:hover { background: rgba(255,255,255,0.04); }
+      .sm-boot-fallback button.primary { background: #00E5FF; color: #0a0f1c; border-color: #00E5FF; font-weight: 600; }
+    </style>
+    <script type="module" crossorigin src="/assets/index-Zvkm1QPv.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CbUGV6dl.css">
   </head>
   <body>
     <div id="root"></div>
+    <div id="sm-boot">
+      <div class="sm-boot-spinner"></div>
+      <div class="sm-boot-text">Loading Smart Maps OS…</div>
+    </div>
+    <noscript>
+      <p style="padding:24px;color:#fff;">Smart Maps OS requires JavaScript.</p>
+    </noscript>
+    <script>
+      // Heartbeat — fires from index.html before any module script runs so it
+      // works even if the bundle never loads (no JS = no React = no Safe Mode
+      // screen, only this fallback can rescue us).
+      (function () {
+        try {
+          window.__SM_BOOT_START__ = Date.now();
+          window.__SM_BOOT_OK__ = false;
+          var DEADLINE = 8000;
+          window.__SM_BOOT_DEADLINE__ = setTimeout(function () {
+            if (window.__SM_BOOT_OK__) return;
+            var boot = document.getElementById('sm-boot');
+            if (!boot) return;
+            boot.innerHTML =
+              '<div class="sm-boot-fallback">' +
+                '<div class="sm-boot-title">Smart Maps didn\'t finish booting</div>' +
+                '<p>The map didn\'t load in time. Try a reload, switch to Safe Mode, or wipe local data.</p>' +
+                '<button class="primary" onclick="location.reload()">Reload</button>' +
+                '<button onclick="(function(){try{localStorage.setItem(\'smartmaps.safe-mode\',\'1\');}catch(e){}; location.reload();})()">Enter Safe Mode</button>' +
+                '<button onclick="(function(){try{localStorage.clear();}catch(e){}; location.reload();})()">Reset &amp; reload</button>' +
+              '</div>';
+          }, DEADLINE);
+        } catch (e) {
+          /* Even the heartbeat failed — the WebView itself is the problem. */
+        }
+      })();
+    </script>
   </body>
 </html>

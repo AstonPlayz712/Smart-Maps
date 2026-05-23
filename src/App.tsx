@@ -15,6 +15,7 @@ import { SmartMapsEngine } from './engine/SmartMapsEngine';
 import { LOCATIONS, type LocationId } from './modules/smart-maps/locations';
 import { AutoExBridge } from './modules/autolink/AutoExBridge';
 import type { AutoExLocationProvider } from './services/location-providers/providers/AutoExLocationProvider';
+import { markBootReady } from './boot';
 
 export default function App() {
   const [engine, setEngine] = useState<SmartMapsEngine | null>(null);
@@ -27,7 +28,12 @@ export default function App() {
   useEffect(() => {
     const e = new SmartMapsEngine({
       initialLocation: 'london',
-      onReady: () => setReady(true),
+      onReady: () => {
+        setReady(true);
+        // Boot complete — clear the HTML heartbeat overlay and reset the
+        // crash counter. From here, errors are runtime, not boot.
+        markBootReady();
+      },
       onToast: (msg) => {
         setToast(msg);
         window.setTimeout(() => setToast(null), 2400);
