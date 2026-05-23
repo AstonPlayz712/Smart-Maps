@@ -5,6 +5,8 @@ import AskMapsBar from './components/AskMapsBar';
 import LocationSwitcher from './components/LocationSwitcher';
 import LocationProviderChip from './components/LocationProviderChip';
 import VoiceSelector from './components/VoiceSelector';
+import MediaChip from './components/MediaChip';
+import MediaDrawer from './components/MediaDrawer';
 import AutoExDebugOverlay from './components/AutoExDebugOverlay';
 import HUD from './components/HUD';
 import CameraControls from './components/CameraControls';
@@ -20,6 +22,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [activeLocation, setActiveLocation] = useState<LocationId>('london');
   const [toast, setToast] = useState<string | null>(null);
+  const [mediaOpen, setMediaOpen] = useState(false);
 
   useEffect(() => {
     const e = new SmartMapsEngine({
@@ -89,6 +92,7 @@ export default function App() {
           Smart Maps <span className="brand-os">OS</span>
         </div>
         <div className="top-right-group">
+          <MediaChip onOpen={() => setMediaOpen(true)} active={mediaOpen} />
           <VoiceSelector engine={engine ?? undefined} />
           <LocationProviderChip engine={engine ?? undefined} />
           <LocationSwitcher
@@ -126,6 +130,14 @@ export default function App() {
           }
         />
       </div>
+
+      {engine && (
+        <MediaDrawer
+          engine={engine}
+          open={mediaOpen}
+          onClose={() => setMediaOpen(false)}
+        />
+      )}
 
       {import.meta.env.DEV && <AutoExDebugOverlay bridge={bridge} />}
 
