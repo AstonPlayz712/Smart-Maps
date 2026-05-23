@@ -10,6 +10,7 @@ import { NavigationService } from '../services/NavigationService';
 import { LocationProviders } from '../services/location-providers/LocationProviders';
 import { VoiceEngine } from '../services/voice/VoiceEngine';
 import { Spotify } from '../services/media/spotify/Spotify';
+import { MoisesClient } from '../services/media/moises/MoisesClient';
 import { WiFiProvider } from '../services/location-providers/providers/WiFiProvider';
 import { BluetoothBeaconProvider } from '../services/location-providers/providers/BluetoothBeaconProvider';
 import { AutoExLocationProvider } from '../services/location-providers/providers/AutoExLocationProvider';
@@ -45,6 +46,7 @@ export class SmartMapsEngine {
   readonly navigationService: NavigationService;
   readonly voice: VoiceEngine;
   readonly spotify: Spotify;
+  readonly moises: MoisesClient;
   readonly askMaps: AskMaps;
 
   constructor(opts: EngineOptions) {
@@ -71,6 +73,7 @@ export class SmartMapsEngine {
     this.voice.start();
     this.spotify = new Spotify(this.bus);
     void this.spotify.start();
+    this.moises = new MoisesClient();
     this.askMaps = new AskMaps(this);
 
     if (opts.onReady) this.bus.on('engine:ready', opts.onReady);
