@@ -9,8 +9,10 @@ const ROUTE_GLOW = 'sm-route-glow';
 const DEST_RING = 'sm-route-dest-ring';
 const DEST_DOT = 'sm-route-dest-dot';
 
-const BASE_CORE_WIDTH = 4;
-const BASE_GLOW_WIDTH = 14;
+// Thin neon filament: white-hot core inside a soft cyan halo, sized small
+// so the route doesn't drown the map.
+const BASE_CORE_WIDTH = 2.0;
+const BASE_GLOW_WIDTH = 10;
 const JUNCTION_MULTIPLIER = 1.1;
 const TRANSITION_MS = 300;
 
@@ -137,7 +139,7 @@ export class RouteEngine {
         data: { type: 'FeatureCollection', features: [] }
       });
     }
-    // Soft white halo
+    // Outer cyan halo — the "neon" diffusion.
     if (!this.map.getLayer(ROUTE_GLOW)) {
       this.map.addLayer({
         id: ROUTE_GLOW,
@@ -145,19 +147,18 @@ export class RouteEngine {
         source: ROUTE_SOURCE,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': '#FFFFFF',
+          'line-color': '#00E5FF',
           'line-width': BASE_GLOW_WIDTH,
-          'line-opacity': 0.18,
-          'line-blur': 4
+          'line-opacity': 0.28,
+          'line-blur': 5
         }
       });
-      // Smooth (300 ms) width transitions for junction widening — no overshoot.
       this.map.setPaintProperty(ROUTE_GLOW, 'line-width-transition', {
         duration: TRANSITION_MS,
         delay: 0
       });
     }
-    // Electric cyan core
+    // Inner filament — bright, near-white core.
     if (!this.map.getLayer(ROUTE_LAYER)) {
       this.map.addLayer({
         id: ROUTE_LAYER,
@@ -165,9 +166,9 @@ export class RouteEngine {
         source: ROUTE_SOURCE,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': '#00E5FF',
+          'line-color': '#F5FCFF',
           'line-width': BASE_CORE_WIDTH,
-          'line-opacity': 0.96
+          'line-opacity': 0.98
         }
       });
       this.map.setPaintProperty(ROUTE_LAYER, 'line-width-transition', {

@@ -6,7 +6,10 @@ export const USER_MARKER_SOURCE = 'sm-user-position';
 export const USER_MARKER_GLOW_LAYER = 'sm-user-glow';
 export const USER_MARKER_LAYER = 'sm-user-arrow-layer';
 
-const ARROW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><path d="M24 6 L38 38 L24 32 L10 38 Z" fill="#00E5FF" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+// Glass-shard position marker: a sharp faceted chevron with an internal
+// highlight, drawn in cyan-to-teal so it reads as glass-on-map rather than
+// a cartoonish blob.
+const ARROW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="shard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E5FCFF" stop-opacity="1"/><stop offset="0.45" stop-color="#00E5FF" stop-opacity="0.95"/><stop offset="1" stop-color="#0096A8" stop-opacity="0.85"/></linearGradient></defs><path d="M24 4 L34 32 L24 26 L14 32 Z" fill="url(#shard)" stroke="#FFFFFF" stroke-width="0.9" stroke-linejoin="round"/><path d="M24 4 L24 26" stroke="#FFFFFF" stroke-width="0.6" stroke-opacity="0.55" stroke-linecap="round"/></svg>`;
 
 /**
  * UserMarker — sharp cyan arrow with a soft underglow at the user's live

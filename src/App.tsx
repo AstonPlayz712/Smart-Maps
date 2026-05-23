@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { MapMouseEvent } from 'maplibre-gl';
 import MapView from './components/MapView';
-import AskMapsBar from './components/AskMapsBar';
-import LocationSwitcher from './components/LocationSwitcher';
-import LocationProviderChip from './components/LocationProviderChip';
-import VoiceSelector from './components/VoiceSelector';
-import MediaChip from './components/MediaChip';
+import TopStrip from './components/TopStrip';
+import NavBanner from './components/NavBanner';
+import BottomDeck from './components/BottomDeck';
+import SearchSheet from './components/SearchSheet';
+import SettingsSheet from './components/SettingsSheet';
 import MediaDrawer from './components/MediaDrawer';
 import AutoExDebugOverlay from './components/AutoExDebugOverlay';
-import HUD from './components/HUD';
-import CameraControls from './components/CameraControls';
 import Toast from './components/Toast';
 import { SmartMapsEngine } from './engine/SmartMapsEngine';
 import { LOCATIONS, type LocationId } from './modules/smart-maps/locations';
@@ -23,6 +21,8 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [activeLocation, setActiveLocation] = useState<LocationId>('london');
   const [toast, setToast] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
 
   useEffect(() => {
@@ -30,8 +30,6 @@ export default function App() {
       initialLocation: 'london',
       onReady: () => {
         setReady(true);
-        // Boot complete — clear the HTML heartbeat overlay and reset the
-        // crash counter. From here, errors are runtime, not boot.
         markBootReady();
       },
       onToast: (msg) => {
@@ -41,17 +39,10 @@ export default function App() {
     });
     setEngine(e);
 
-    // AutoEx — external transport bridge. Forwards navigation events out to
-    // an AutoOSM companion (when one is connected) and routes inbound
-    // `location:fix` packets into the AutoEx location provider.
     const b = new AutoExBridge();
     b.attachNavigationService(e.navigationService);
     const autoexProvider = e.locationProviders.getProvider<AutoExLocationProvider>('autoex');
     if (autoexProvider) b.attachLocationProvider(autoexProvider);
-    // Best-effort: try to connect now. Wi-Fi Direct is normally unavailable in
-    // browsers (stub), BLE needs a user gesture, so this usually falls through
-    // to WebSocket — which fails silently when no relay is running. The dev
-    // overlay surfaces all of that and offers a Retry button.
     void b.connect();
     setBridge(b);
 
@@ -64,9 +55,9 @@ export default function App() {
     };
   }, []);
 
-  // Map tap → navigation service. The engine no longer handles clicks itself; the
-  // UI surface is responsible for translating taps into navigation intent so all
-  // navigation goes through the service.
+  // Tap on map → start navigation to the tapped lat/lng. Keeps the map
+  // surface itself uncluttered (no inline chips) — the NavBanner reflects
+  // the result.
   useEffect(() => {
     if (!engine || !ready) return;
     const map = engine.getMap();
@@ -89,53 +80,37 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div className="app sm-3d">
       <MapView engine={engine ?? undefined} />
 
-      <div className="overlay top">
-        <div className="brand" title="Smart Maps · Immersive Navigation · Ask Maps">
-          <span className="brand-dot" />
-          Smart Maps <span className="brand-os">OS</span>
-        </div>
-        <div className="top-right-group">
-          <MediaChip onOpen={() => setMediaOpen(true)} active={mediaOpen} />
-          <VoiceSelector engine={engine ?? undefined} />
-          <LocationProviderChip engine={engine ?? undefined} />
-          <LocationSwitcher
-            locations={LOCATIONS}
-            activeId={activeLocation}
-            onSelect={handleSelectLocation}
-          />
-        </div>
-      </div>
+      <TopStrip
+        engine={engine ?? undefined}
+        onSettings={() => setSettingsOpen(true)}
+        onMedia={() => setMediaOpen(true)}
+      />
 
-      <HUD engine={engine ?? undefined} ready={ready} />
-      <CameraControls engine={engine ?? undefined} ready={ready} />
+      <NavBanner engine={engine ?? undefined} />
 
-      <div className="overlay bottom">
-        <AskMapsBar
-          onAsk={(q) => engine?.askMaps.run(q)}
-          suggestions={
-            activeLocation === 'london'
-              ? [
-                  'fly to London Eye',
-                  'orbit Tower Bridge',
-                  'route to Big Ben',
-                  'show 3D buildings',
-                  'cinematic tour',
-                  'night mode'
-                ]
-              : [
-                  'fly to Navagio Beach',
-                  'orbit Blue Caves',
-                  'show terrain',
-                  'tilt 75',
-                  'cinematic tour',
-                  'dusk mode'
-                ]
-          }
-        />
-      </div>
+      <BottomDeck
+        engine={engine ?? undefined}
+        onOpenSearch={() => setSearchOpen(true)}
+      />
+
+      <SearchSheet
+        engine={engine ?? undefined}
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
+
+      <SettingsSheet
+        engine={engine ?? undefined}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        locations={LOCATIONS}
+        activeLocation={activeLocation}
+        onSelectLocation={handleSelectLocation}
+        ready={ready}
+      />
 
       {engine && (
         <MediaDrawer

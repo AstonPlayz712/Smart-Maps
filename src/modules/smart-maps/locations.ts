@@ -16,8 +16,8 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     description: 'Westminster & the South Bank — dense 3D city core.',
     pose: {
       center: [-0.1245, 51.5007],
-      zoom: 15.6,
-      pitch: 64,
+      zoom: 15.4,
+      pitch: 16,
       bearing: -20
     }
   },
@@ -28,7 +28,7 @@ export const LOCATIONS: Record<LocationId, LocationDef> = {
     pose: {
       center: [20.6235, 37.859],
       zoom: 13.2,
-      pitch: 72,
+      pitch: 18,
       bearing: 40
     }
   }
