@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DevShellTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="android:windowBackground">@color/devshell_bg</item>
+        <item name="android:statusBarColor">@color/devshell_bg</item>
+        <item name="android:navigationBarColor">@color/devshell_bg</item>
+        <item name="colorPrimary">@color/devshell_accent</item>
+        <item name="colorPrimaryVariant">@color/devshell_accent</item>
+        <item name="colorOnPrimary">@color/devshell_bg</item>
+    </style>
+</resources>

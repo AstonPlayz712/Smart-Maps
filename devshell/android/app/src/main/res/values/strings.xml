@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DevShell</string>
+    <string name="devshell_subtitle">Smart Maps · native sandbox</string>
+    <string name="renderer_version_fmt">renderer v%1$d</string>
+</resources>

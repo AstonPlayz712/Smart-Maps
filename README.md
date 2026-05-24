@@ -173,6 +173,41 @@ under Google Play's size limits.
 The AutoEx WebSocket transport already self-disables inside Capacitor on
 Android too, so no `ws://localhost` connect attempts happen on the device.
 
+## Two parallel build paths
+
+The repo ships two independent Android pipelines:
+
+| Path | What it builds | Where it runs | Used by |
+|---|---|---|---|
+| **Appflow** | Main Smart Maps app (IPA + APK / AAB) | Ionic Appflow cloud | Proto today — iOS + Android binaries for the iPhone 11 / S25. |
+| **GitHub Actions** | Main app (APK) **and** DevShell (APK) | `.github/workflows/android-builds.yml` | Vendor-neutral Android cloud build that also covers the native sandbox. |
+
+Both run from the same `main`. The GitHub Actions workflow doesn't touch
+the Appflow setup — they're parallel, not competing. Triggers on push to
+`main` / `claude/**` with path filters, plus a manual `workflow_dispatch`
+with a build target selector (`main` / `devshell` / `both`).
+
+## DevShell — native sandbox
+
+`devshell/` is a **separate app** living next to the proto. Different
+package id (`com.smartmaps.devshell`), Capacitor-free, Appflow-free,
+intentionally outside the Boot Stability Layer / SM proto / LG UI. It's
+the freedom environment for Auto-class native work (GPU rendering, native
+camera, native tile pipeline, native IN) without risking the proto.
+
+```
+devshell/
+├── android/    Kotlin + JNI + CMake; builds via the GitHub Actions pipeline
+├── ios/        Xcode-managed; Swift + Obj-C++ templates, manual project setup
+├── native/     shared C++ consumed by both platforms
+└── src/        reserved for future TS glue (empty placeholder)
+```
+
+The Android side ships a working Kotlin → JNI → shared-C++ round-trip
+already so the bridge is provable on first install. iOS ships source
+templates plus a setup README — Xcode is manual until you're in front of
+a Mac. See `devshell/README.md` for the full roadmap.
+
 ## Architecture
 
 The repo is organised so each module is independently swappable:

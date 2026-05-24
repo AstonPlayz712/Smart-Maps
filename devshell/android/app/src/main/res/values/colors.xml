@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- DevShell palette — mirrors the main Smart Maps brand so the apps
+         visually identify as siblings, but DevShell is intentionally darker
+         and chromier so you can spot a wrong-binary install at a glance. -->
+    <color name="devshell_bg">#070b14</color>
+    <color name="devshell_fg">#ffffff</color>
+    <color name="devshell_muted">#8a93a8</color>
+    <color name="devshell_accent">#00e5ff</color>
+</resources>
