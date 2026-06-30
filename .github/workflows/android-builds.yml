@@ -78,9 +78,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
+          packages: 'platforms;android-34 build-tools;34.0.0'
 
       - name: Install npm dependencies
         run: npm ci
@@ -126,11 +124,7 @@ jobs:
       - name: Set up Android SDK + NDK + CMake
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;25.2.9519653
-            cmake;3.22.1
+          packages: 'platforms;android-34 build-tools;34.0.0 ndk;25.2.9519653 cmake;3.22.1'
 
       - name: Make gradlew executable
         working-directory: devshell/android
