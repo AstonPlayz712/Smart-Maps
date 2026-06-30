@@ -9,9 +9,9 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc -b",
-    "capacitor:sync": "echo 'sync handled by Appflow'",
-    "capacitor:sync:android": "echo 'sync handled by Appflow'",
-    "capacitor:sync:ios": "echo 'sync handled by Appflow'"
+    "native:sync": "echo 'native asset sync handled in-engine by core/zante/native (no Appflow, no WebView bridge)'",
+    "native:sync:android": "echo 'native Android pipeline: devshell/ + .github/workflows/android-builds.yml'",
+    "native:sync:ios": "echo 'native iOS pipeline: devshell/ios'"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.1",

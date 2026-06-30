@@ -1,7 +1,0 @@
-{
-  "name": "smart-maps-os",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "custom"
-}
