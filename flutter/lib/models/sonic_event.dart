@@ -16,9 +16,16 @@ class SonicEvent {
   final String id;
   final SonicEventType type;
   final SonicPriority priority;
-  final String? text;
-  final String? assetPath;
+
+  /// Spoken text content for TTS voice lines.
+  final String? textToSpeak;
+
+  /// Audio asset path for earcon sounds.
+  final String? earconAsset;
+
+  /// Bearing in degrees for spatial audio panning in IN mode.
   final double? bearingDeg;
+
   final Duration? duration;
   final ManeuverInstruction? maneuverInstruction;
   final DateTime createdAt;
@@ -27,8 +34,8 @@ class SonicEvent {
     required this.id,
     required this.type,
     required this.priority,
-    this.text,
-    this.assetPath,
+    this.textToSpeak,
+    this.earconAsset,
     this.bearingDeg,
     this.duration,
     this.maneuverInstruction,

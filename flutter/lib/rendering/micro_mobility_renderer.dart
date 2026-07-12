@@ -88,8 +88,8 @@ class MicroMobilityRenderer {
       case ComplianceZoneType.legalBay:
         return ZoneRenderType.legalBay;
       case ComplianceZoneType.microMobilityGeofence:
-        return ZoneRenderType.geofence;
-      default:
+      case ComplianceZoneType.lez:
+      case ComplianceZoneType.congestionCharge:
         return ZoneRenderType.geofence;
     }
   }

@@ -1,20 +1,20 @@
 import 'latlng.dart';
 import 'mode_strand.dart';
 
-enum CrowdingLevel { unknown, low, moderate, high, severe }
+enum CrowdingLevel { empty, low, medium, high, crush }
 
 enum FlowType { pedestrian, cycling, microMobility, transit, vehicular, mixed }
 
 class FlowCell {
   const FlowCell({
     required this.id,
-    required this.index,
+    required this.segmentIndex,
     required this.crowdingLevel,
     this.intensity = 0.5,
   });
 
   final String id;
-  final int index;
+  final int segmentIndex;
   final CrowdingLevel crowdingLevel;
   final double intensity;
 }

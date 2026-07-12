@@ -176,13 +176,34 @@ class ComplianceEngine {
           );
         }
         return null;
-      case ComplianceZoneType.autoLimit:
+      case ComplianceZoneType.autoLimitSpeed:
         if (zone.speedLimitMps != null && speedMps > zone.speedLimitMps!) {
           return _createViolation(
             zone,
             mode,
             'Automatic speed limit exceeded (${zone.speedLimitMps!.toStringAsFixed(1)} m/s).',
             speedExcessMps: speedMps - zone.speedLimitMps!,
+          );
+        }
+        return null;
+      case ComplianceZoneType.legalBay:
+        // Legal bays are informational — no violation generated.
+        return null;
+      case ComplianceZoneType.microMobilityGeofence:
+        if (mode == TravelMode.microMobility) {
+          return _createViolation(
+            zone,
+            mode,
+            'Micro-mobility is restricted in this geofenced area.',
+          );
+        }
+        return null;
+      case ComplianceZoneType.congestionCharge:
+        if (mode == TravelMode.drive) {
+          return _createViolation(
+            zone,
+            mode,
+            'Congestion charge applies in this zone.',
           );
         }
         return null;

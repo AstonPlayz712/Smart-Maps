@@ -1,8 +1,7 @@
 import '../../models/camera_pose.dart';
 import '../../models/gate.dart';
+import '../../models/in_behaviour_mode.dart';
 import '../../models/latlng.dart';
-
-enum INBehaviourMode { driving, walking, cycling }
 
 class INCamera {
   double pitch = 60.0;

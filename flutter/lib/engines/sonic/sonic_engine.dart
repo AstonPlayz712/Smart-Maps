@@ -65,7 +65,7 @@ class SonicEngine {
       case SonicEventType.maneuver:
         final line = event.maneuverInstruction != null
             ? VoiceLines.maneuver(event.maneuverInstruction!)
-            : VoiceLine(event.text ?? 'Continue', event.priority, panAngle: pan);
+            : VoiceLine(event.textToSpeak ?? 'Continue', event.priority, panAngle: pan);
         _voiceLines.speak(line, volume: _volume);
         break;
       case SonicEventType.reroute:
@@ -74,32 +74,32 @@ class SonicEngine {
         break;
       case SonicEventType.arrival:
         _voiceLines.speak(
-          VoiceLines.arrival(event.text ?? 'your destination'),
+          VoiceLines.arrival(event.textToSpeak ?? 'your destination'),
           volume: _volume,
         );
         _earconPlayer.play(EarconAsset.arrival, panAngle: pan);
         break;
       case SonicEventType.disruption:
         _voiceLines.speak(
-          VoiceLines.disruption(event.text ?? 'Please expect delays.'),
+          VoiceLines.disruption(event.textToSpeak ?? 'Please expect delays.'),
           volume: _volume,
         );
         _earconPlayer.play(EarconAsset.disruption, panAngle: pan);
         break;
       case SonicEventType.transit:
         _voiceLines.speak(
-          VoiceLine(event.text ?? '', event.priority, panAngle: pan),
+          VoiceLine(event.textToSpeak ?? '', event.priority, panAngle: pan),
           volume: _volume,
         );
         break;
       case SonicEventType.approaching:
         _voiceLines.speak(
-          VoiceLines.approaching(event.text ?? 'destination'),
+          VoiceLines.approaching(event.textToSpeak ?? 'destination'),
           volume: _volume,
         );
         break;
       case SonicEventType.earcon:
-        _earconPlayer.play(event.assetPath ?? EarconAsset.wakeWord, panAngle: pan);
+        _earconPlayer.play(event.earconAsset ?? EarconAsset.wakeWord, panAngle: pan);
         break;
     }
 
@@ -189,7 +189,7 @@ class SonicEngine {
         id: _nextId('maneuver'),
         type: SonicEventType.maneuver,
         priority: line.priority,
-        text: line.text,
+        textToSpeak: line.text,
         bearingDeg: instruction.bearingDeg,
         maneuverInstruction: instruction,
       ),
@@ -202,7 +202,7 @@ class SonicEngine {
         id: _nextId('reroute'),
         type: SonicEventType.reroute,
         priority: SonicPriority.urgent,
-        text: 'Rerouting…',
+        textToSpeak: 'Rerouting…',
       ),
     );
   }
@@ -213,7 +213,7 @@ class SonicEngine {
         id: _nextId('arrival'),
         type: SonicEventType.arrival,
         priority: SonicPriority.high,
-        text: destinationName,
+        textToSpeak: destinationName,
       ),
     );
   }
@@ -224,7 +224,7 @@ class SonicEngine {
         id: _nextId('disruption'),
         type: SonicEventType.disruption,
         priority: SonicPriority.high,
-        text: summary,
+        textToSpeak: summary,
       ),
     );
   }
@@ -235,7 +235,7 @@ class SonicEngine {
         id: _nextId('earcon'),
         type: SonicEventType.earcon,
         priority: SonicPriority.normal,
-        assetPath: asset,
+        earconAsset: asset,
         duration: const Duration(milliseconds: 700),
       ),
     );
@@ -250,7 +250,7 @@ class SonicEngine {
   }
 
   Duration _estimateDuration(SonicEvent event) {
-    final source = event.text ?? event.assetPath ?? '';
+    final source = event.textToSpeak ?? event.earconAsset ?? '';
     if (source.isEmpty) {
       return const Duration(milliseconds: 900);
     }

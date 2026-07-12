@@ -34,7 +34,7 @@ class INCallouts {
     _callouts.add(
       INCallout(
         id: gate.id,
-        text: gate.label,
+        text: gate.calloutText ?? 'Junction ahead',
         coordinate: gate.coordinate,
         bearing: gate.approachBearing,
         distanceMeters: double.infinity,

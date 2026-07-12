@@ -1,7 +1,7 @@
 import 'latlng.dart';
 import 'mode_strand.dart';
 
-enum ComplianceZoneType { lez, slowZone, noRideZone, autoLimit }
+enum ComplianceZoneType { lez, slowZone, noRideZone, autoLimitSpeed, legalBay, microMobilityGeofence, congestionCharge }
 
 enum EnforcementLevel { advisory, monitored, enforced, automatic }
 

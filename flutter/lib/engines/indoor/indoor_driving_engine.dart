@@ -310,10 +310,10 @@ class IndoorDrivingEngine {
       final yi = polygon[i].latitude;
       final xj = polygon[j].longitude;
       final yj = polygon[j].latitude;
+      final denom = (yj - yi) == 0 ? 1e-12 : (yj - yi);
       final intersect = ((yi > point.latitude) != (yj > point.latitude)) &&
           (point.longitude <
-              ((xj - xi) * (point.latitude - yi) / ((yj - yi) == 0 ? 1e-12 : (yj - yi))) +
-                  xi);
+              ((xj - xi) * (point.latitude - yi) / denom) + xi);
       if (intersect) {
         inside = !inside;
       }

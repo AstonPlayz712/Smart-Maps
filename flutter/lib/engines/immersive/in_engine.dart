@@ -1,5 +1,6 @@
 import '../../models/camera_pose.dart';
 import '../../models/gate.dart';
+import '../../models/in_behaviour_mode.dart';
 import '../../models/latlng.dart';
 import 'in_callouts.dart';
 import 'in_camera.dart';
