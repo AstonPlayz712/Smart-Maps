@@ -1,0 +1,61 @@
+name: smart_maps
+description: Smart Maps — unified mobility engine. Logic layer for iOS, Android, Windows handheld, Windows desktop (view-only), macOS desktop (view-only).
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  riverpod: ^2.5.1
+  flutter_riverpod: ^2.5.1
+
+  # Map rendering
+  mapbox_maps_flutter: ^2.3.0
+
+  # Sensors & location
+  geolocator: ^12.0.0
+  sensors_plus: ^4.1.1
+  flutter_compass: ^0.8.0
+
+  # Audio / TTS
+  flutter_tts: ^4.0.2
+  audioplayers: ^6.0.0
+
+  # Networking
+  dio: ^5.4.3+1
+  web_socket_channel: ^3.0.1
+
+  # Storage
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.2.3
+
+  # Utilities
+  collection: ^1.18.0
+  equatable: ^2.0.5
+  rxdart: ^0.28.0
+  uuid: ^4.4.2
+  intl: ^0.19.0
+  vector_math: ^2.1.4
+
+  # Platform
+  flutter_local_notifications: ^17.2.2
+  permission_handler: ^11.3.1
+  device_info_plus: ^10.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
