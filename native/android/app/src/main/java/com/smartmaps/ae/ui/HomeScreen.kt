@@ -1,5 +1,6 @@
 package com.smartmaps.ae.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Navigation
@@ -105,7 +105,8 @@ private fun QuickMode(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Card(modifier = modifier, onClick = onClick) {
+    // Stable clickable modifier instead of the experimental Card(onClick) API.
+    Card(modifier = modifier.clickable(onClick = onClick)) {
         Column(
             Modifier.fillMaxWidth().padding(vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
