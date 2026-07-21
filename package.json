@@ -3,28 +3,21 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Unified SM-IN-AM proto: Smart Maps renderer + Immersive Navigation camera engine + Ask Maps AI command layer, one engine.",
+  "description": "Smart Maps A/E browser reference harness for the native apps in native/ — algorithm source of truth, ships nothing to devices.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc -b",
-    "native:sync": "echo 'native asset sync handled in-engine by core/zante/native (no Appflow, no WebView bridge)'",
-    "native:sync:android": "echo 'native Android pipeline: devshell/ + .github/workflows/android-builds.yml'",
-    "native:sync:ios": "echo 'native iOS pipeline: devshell/ios'"
+    "native:android": "echo 'cd native/android && ./gradlew assembleDebug'",
+    "native:ios": "echo 'cd native/ios && xcodegen generate (see native/MIGRATION.md)'"
   },
   "dependencies": {
-    "@capacitor/android": "^6.2.1",
-    "@capacitor/app": "^6.0.3",
-    "@capacitor/browser": "^6.0.6",
-    "@capacitor/core": "^6.1.2",
-    "@capacitor/ios": "^6.1.2",
     "maplibre-gl": "^4.7.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.1.2",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

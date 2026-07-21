@@ -1,5 +1,3 @@
-import { App, type URLOpenListenerEvent } from '@capacitor/app';
-import { Browser } from '@capacitor/browser';
 import {
   SPOTIFY_AUTH_URL,
   SPOTIFY_CLIENT_ID,
@@ -7,7 +5,6 @@ import {
   SPOTIFY_SCOPES,
   SPOTIFY_STORAGE_KEY,
   SPOTIFY_TOKEN_URL,
-  isCapacitor,
   spotifyRedirectUri
 } from './config';
 import type { SpotifyAuthState, SpotifyTokens } from './types';
@@ -20,21 +17,19 @@ interface PkceState {
 }
 
 /**
- * SpotifyAuth — PKCE OAuth flow for Spotify Web API.
+ * SpotifyAuth — PKCE OAuth flow for Spotify Web API (browser harness only).
  *
- * Native (Capacitor): opens the authorize URL in the system browser via
- * `@capacitor/browser`, listens for the `com.smartmaps.os://spotify-callback`
- * deep link via `@capacitor/app`'s `appUrlOpen` event, then exchanges the
- * code for tokens with the PKCE verifier (no client secret).
+ * The hybrid (Capacitor deep-link) path is gone with the WebView shell. The
+ * native apps will run platform OAuth (ASWebAuthenticationSession / Custom
+ * Tabs) inside native/ when the media module lands there — nothing in this
+ * web-harness flow ships to a device.
  *
- * Web (dev server): same flow, but the redirect is `http://localhost:5173/
- * spotify-callback` and the page reload is intercepted by `handleRedirect`.
- *
- * Tokens persist in localStorage; `getValidToken` refreshes silently.
+ * Web flow: redirect to Spotify, return to `/spotify-callback`, exchange the
+ * code with the PKCE verifier (no client secret). Tokens persist in
+ * localStorage; `getValidToken` refreshes silently.
  */
 export class SpotifyAuth {
   private listeners = new Set<Listener>();
-  private appUrlListenerHandle: { remove: () => Promise<void> } | null = null;
   private refreshTimer: number | null = null;
   private currentTokens: SpotifyTokens | null = null;
 
@@ -46,23 +41,12 @@ export class SpotifyAuth {
   // ─── lifecycle ────────────────────────────────────────────────────────────
 
   async init(): Promise<void> {
-    if (isCapacitor()) {
-      this.appUrlListenerHandle = await App.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
-        if (event.url && event.url.startsWith('com.smartmaps.os://spotify-callback')) {
-          void this.handleRedirect(event.url);
-          void Browser.close();
-        }
-      });
-    } else if (typeof window !== 'undefined' && window.location.pathname === '/spotify-callback') {
+    if (typeof window !== 'undefined' && window.location.pathname === '/spotify-callback') {
       void this.handleRedirect(window.location.href);
     }
   }
 
   async destroy(): Promise<void> {
-    if (this.appUrlListenerHandle) {
-      await this.appUrlListenerHandle.remove();
-      this.appUrlListenerHandle = null;
-    }
     if (this.refreshTimer !== null) {
       window.clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
@@ -88,12 +72,7 @@ export class SpotifyAuth {
       scope: SPOTIFY_SCOPES
     });
     const authorizeUrl = `${SPOTIFY_AUTH_URL}?${params.toString()}`;
-
-    if (isCapacitor()) {
-      await Browser.open({ url: authorizeUrl, presentationStyle: 'popover' });
-    } else {
-      window.location.href = authorizeUrl;
-    }
+    window.location.href = authorizeUrl;
   }
 
   async signOut(): Promise<void> {
@@ -199,7 +178,7 @@ export class SpotifyAuth {
         /* noop */
       }
     }
-    if (!isCapacitor() && typeof history !== 'undefined') {
+    if (typeof history !== 'undefined') {
       history.replaceState({}, '', '/');
     }
   }

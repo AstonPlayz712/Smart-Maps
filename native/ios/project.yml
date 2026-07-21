@@ -1,0 +1,25 @@
+# XcodeGen manifest for the native Smart Maps A/E iOS app.
+# Generate the project with:  xcodegen generate   (brew install xcodegen)
+name: SmartMapsAE
+options:
+  bundleIdPrefix: com.smartmaps
+  deploymentTarget:
+    iOS: '16.0'
+targets:
+  SmartMapsAE:
+    type: application
+    platform: iOS
+    sources: [SmartMapsAE]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.smartmaps.ae
+        SWIFT_VERSION: '5.9'
+        TARGETED_DEVICE_FAMILY: '1'
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: >-
+          Smart Maps fuses GPS, Wi-Fi, cell and motion sensors to keep
+          navigation accurate — including indoors and in tunnels.
+        INFOPLIST_KEY_NSMotionUsageDescription: >-
+          Motion sensors keep navigation running when GPS is weak and stop
+          the map drifting when you are stationary.
