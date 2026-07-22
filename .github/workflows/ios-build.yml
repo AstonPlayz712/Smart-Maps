@@ -1,0 +1,95 @@
+#
+# iOS unsigned IPA — cloud-only build, no macOS locally, no Apple Developer
+# account, no manual code signing.
+#
+# Builds the native Smart Maps A/E app (native/ios, Swift + SwiftUI) with
+# xcodebuild on a macOS runner, with code signing fully disabled, then
+# packages the .app into an UNSIGNED .ipa. AltStore / SideStore / TrollStore
+# re-sign the IPA on-device at install time (with your free Apple ID), which
+# is exactly why the CI build must stay unsigned.
+#
+# Note on `-exportArchive` + provisioning plists: that path requires a real
+# signing identity + provisioning profile, i.e. an Apple Developer account —
+# which this pipeline explicitly must not need. Packaging the unsigned .app
+# as Payload/*.ipa is the standard sideloading-compatible equivalent.
+#
+# Artifact: smart-maps-ae-unsigned-ipa  →  SmartMapsAE-unsigned.ipa
+#
+
+name: iOS build
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'native/ios/**'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Xcode + CLT versions
+        run: |
+          sudo xcode-select -p
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: native/ios
+        run: xcodegen generate
+
+      - name: Resolve package dependencies
+        working-directory: native/ios
+        run: |
+          # No external SPM/CocoaPods deps today; this resolves anything that
+          # gets added later and is a no-op until then.
+          xcodebuild -resolvePackageDependencies -project SmartMapsAE.xcodeproj || true
+
+      - name: Build (Release, device SDK, signing disabled)
+        working-directory: native/ios
+        run: |
+          xcodebuild \
+            -project SmartMapsAE.xcodeproj \
+            -scheme SmartMapsAE \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        working-directory: native/ios
+        run: |
+          APP="build/Build/Products/Release-iphoneos/SmartMapsAE.app"
+          test -d "$APP" || { echo "App bundle not found at $APP"; exit 1; }
+          rm -rf Payload SmartMapsAE-unsigned.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry SmartMapsAE-unsigned.ipa Payload
+          ls -la SmartMapsAE-unsigned.ipa
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-maps-ae-unsigned-ipa
+          path: native/ios/SmartMapsAE-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30

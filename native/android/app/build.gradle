@@ -17,6 +17,11 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            // CI has no release keystore: sign release builds with the
+            // auto-generated debug key so the APK is installable straight
+            // from the Actions artifact (sideload / internal testing only —
+            // swap in a real keystore before any store upload).
+            signingConfig signingConfigs.debug
         }
     }
 
