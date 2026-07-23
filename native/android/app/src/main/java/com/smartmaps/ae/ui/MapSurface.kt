@@ -19,12 +19,20 @@ import com.smartmaps.ae.core.Route
 import kotlin.math.cos
 
 /**
- * MapSurface — the native map renderer (no SDK, no tiles, no WebView).
+ * MapSurface — the persistent native map layer (no SDK, no tiles, no WebView).
  *
- * Draws the offline road graph, the active route, and the snapped position
- * from engine geometry on a Compose Canvas. This is the mobile expression of
- * the Zante renderer: engine-owned geometry drawn natively. Camera follows
- * the fused position; north-up unless a heading is provided.
+ * MAP LAYER RULES (SM design language):
+ *   • It is always rendered — it never returns early. With no fix and no
+ *     graph it still draws the live metric grid, so the surface always reads
+ *     as a living map, never a blank void ("map not rendering" fix).
+ *   • It is owned by the root container (SmartMapsApp), never mounted inside
+ *     a screen/destination — destinations only swap the card layer above it.
+ *   • It always fills the window (fillMaxSize on the root) — the collapsing
+ *     0dp container class of bug cannot occur because nothing measures it
+ *     against wrap-content parents.
+ *
+ * Camera centres on the fused position; scale comes from the adaptive bucket
+ * (phones ~900 m across, tablets 1400–1600 m).
  */
 @Composable
 fun MapSurface(
@@ -37,25 +45,43 @@ fun MapSurface(
     metersPerScreen: Double = 900.0
 ) {
     val roadColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f)
+    val gridColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f)
     val routeColor = MaterialTheme.colorScheme.primary
     val positionColor = if (onRoad) MaterialTheme.colorScheme.primary else Color(0xFFFFB74D)
     val background = MaterialTheme.colorScheme.background
 
     Canvas(modifier = modifier.fillMaxSize().background(background)) {
-        val center = position ?: graph.edges.firstOrNull()?.path?.firstOrNull() ?: return@Canvas
+        // Camera anchor: fused position → graph origin → (0,0 grid only).
+        val center = position ?: graph.edges.firstOrNull()?.path?.firstOrNull()
         val scale = size.minDimension / metersPerScreen // px per metre
-        val cosLat = cos(Math.toRadians(center.lat))
+        val cosLat = center?.let { cos(Math.toRadians(it.lat)) } ?: 1.0
 
         fun toScreen(p: GeoPoint): Offset {
-            val dx = Math.toRadians(p.lng - center.lng) * GeoPoint.EARTH_R * cosLat
-            val dy = Math.toRadians(p.lat - center.lat) * GeoPoint.EARTH_R
+            val c = center ?: return Offset(size.width / 2, size.height / 2)
+            val dx = Math.toRadians(p.lng - c.lng) * GeoPoint.EARTH_R * cosLat
+            val dy = Math.toRadians(p.lat - c.lat) * GeoPoint.EARTH_R
             return Offset(
                 (size.width / 2 + dx * scale).toFloat(),
                 (size.height / 2 - dy * scale).toFloat()
             )
         }
 
-        // Road graph
+        // ── metric grid: 100 m lines, always drawn (live surface, never void)
+        val gridStepPx = (100.0 * scale).toFloat()
+        if (gridStepPx > 12f) {
+            var x = (size.width / 2) % gridStepPx
+            while (x < size.width) {
+                drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
+                x += gridStepPx
+            }
+            var y = (size.height / 2) % gridStepPx
+            while (y < size.height) {
+                drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+                y += gridStepPx
+            }
+        }
+
+        // ── road graph
         for (edge in graph.edges) {
             if (edge.path.size < 2) continue
             val path = Path()
@@ -72,7 +98,7 @@ fun MapSurface(
             )
         }
 
-        // Active route
+        // ── active route
         if (route != null && route.points.size >= 2) {
             val path = Path()
             val first = toScreen(route.points.first())
@@ -88,7 +114,7 @@ fun MapSurface(
             )
         }
 
-        // Snapped position: heading-rotated arrow with accuracy halo.
+        // ── fused position: accuracy halo + heading arrow
         if (position != null) {
             val c = toScreen(position)
             drawCircle(positionColor.copy(alpha = 0.18f), radius = 46f, center = c)
@@ -102,6 +128,12 @@ fun MapSurface(
                 }
                 drawPath(arrow, positionColor)
             }
+        }
+
+        // ── scale reference: a 100 m tick, bottom-left
+        if (gridStepPx > 12f) {
+            val y = size.height - 24f
+            drawLine(roadColor, Offset(24f, y), Offset(24f + gridStepPx, y), strokeWidth = 4f)
         }
     }
 }
