@@ -95,9 +95,17 @@ fun SmartMapsApp(core: AECore) {
             if (dimens.sideNavigation) {
                 // ══ TABLET (sw600dp / sw720dp) ═══════════════════════════
                 Row(Modifier.fillMaxSize()) {
-                    // NAVIGATION LAYER: side rail
+                    // NAVIGATION LAYER: side rail (NavigationRailItem is a
+                    // plain composable — valid in the rail's ColumnScope)
                     NavigationRail {
-                        SectionItems(section, rail = true) { section = it }
+                        APP_SECTIONS.forEach { (target, icon, label) ->
+                            NavigationRailItem(
+                                selected = section == target,
+                                onClick = { section = target },
+                                icon = { Icon(icon, contentDescription = label) },
+                                label = { Text(label) }
+                            )
+                        }
                     }
                     // CARD LAYER: fixed-width pane — cards never stretch
                     Column(
@@ -180,12 +188,20 @@ fun SmartMapsApp(core: AECore) {
                             trackingLabel = trackingLabel(core, fix != null, snap?.onRoad == true, snap?.edgeId),
                             onRoutePlanned = { activeMode = SmMode.NAVIGATE }
                         )
-                        androidx.compose.foundation.layout.Spacer(Modifier.padding(dimens.gridMicro / 2))
+                        androidx.compose.foundation.layout.Spacer(Modifier.padding(dimens.gridMicro))
                         LiveStateCard(fix, movement, snap, dimens, expanded = section == AppSection.DIAGNOSTICS)
                     }
-                    // NAVIGATION LAYER: bottom bar
+                    // NAVIGATION LAYER: bottom bar (NavigationBarItem is a
+                    // RowScope extension — called here inside the bar's scope)
                     NavigationBar {
-                        SectionItems(section, rail = false) { section = it }
+                        APP_SECTIONS.forEach { (target, icon, label) ->
+                            NavigationBarItem(
+                                selected = section == target,
+                                onClick = { section = target },
+                                icon = { Icon(icon, contentDescription = label) },
+                                label = { Text(label) }
+                            )
+                        }
                     }
                 }
             }
@@ -225,30 +241,11 @@ private fun CardDeck(
     }
 }
 
-@Composable
-private fun SectionItems(current: AppSection, rail: Boolean, onSelect: (AppSection) -> Unit) {
-    val items = listOf(
-        Triple(AppSection.MAP, Icons.Filled.Map, "Map"),
-        Triple(AppSection.DIAGNOSTICS, Icons.Filled.Sensors, "Diagnostics")
-    )
-    items.forEach { (target, icon, label) ->
-        if (rail) {
-            NavigationRailItem(
-                selected = current == target,
-                onClick = { onSelect(target) },
-                icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
-            )
-        } else {
-            NavigationBarItem(
-                selected = current == target,
-                onClick = { onSelect(target) },
-                icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
-            )
-        }
-    }
-}
+/** App-level sections (SM system layer). Shared by the phone bar + tablet rail. */
+private val APP_SECTIONS = listOf(
+    Triple(AppSection.MAP, Icons.Filled.Map, "Map"),
+    Triple(AppSection.DIAGNOSTICS, Icons.Filled.Sensors, "Diagnostics")
+)
 
 private fun trackingLabel(core: AECore, hasFix: Boolean, onRoad: Boolean, edgeId: String?): String = when {
     !hasFix -> "Acquiring…"
