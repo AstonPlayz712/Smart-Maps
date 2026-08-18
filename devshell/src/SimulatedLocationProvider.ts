@@ -18,14 +18,14 @@ import type {
   ProviderId,
   Unsubscribe
 } from '../../src/services/location-providers/types';
-import { SimulatedSensorFeed } from './SimulatedSensorFeed';
-import type { DevShellOptions, DevShellPosition, DevShellSample } from './types';
+import type { SimulationScript } from '../sim/types';
+import type { DevShellSample } from './types';
 
 export class SimulatedLocationProvider implements LocationProvider {
   readonly id: ProviderId = 'devshell';
   readonly name = 'DevShell Simulation';
 
-  private readonly feed: SimulatedSensorFeed;
+  private readonly script: SimulationScript;
   private readonly intervalMs: number;
   private subs = new Set<LocationListener>();
   private sampleSubs = new Set<(s: DevShellSample) => void>();
@@ -35,9 +35,14 @@ export class SimulatedLocationProvider implements LocationProvider {
   private lastEmitAt = 0;
   private active = false;
 
-  constructor(origin: DevShellPosition, opts: DevShellOptions = {}) {
-    this.feed = new SimulatedSensorFeed(origin, opts);
-    this.intervalMs = 1000 / (opts.updateRateHz ?? 10);
+  constructor(script: SimulationScript, updateRateHz = 10) {
+    this.script = script;
+    this.intervalMs = 1000 / updateRateHz;
+  }
+
+  /** The simulation driving this provider (mode, name, determinism). */
+  get simulation(): SimulationScript {
+    return this.script;
   }
 
   // ─── LocationProvider ─────────────────────────────────────────────────────
@@ -104,13 +109,13 @@ export class SimulatedLocationProvider implements LocationProvider {
 
   /** The IMU stream that accompanies the current motion. */
   imu() {
-    return this.feed.imu();
+    return this.script.imu();
   }
 
   // ─── internals ────────────────────────────────────────────────────────────
 
   private emit(dtSeconds: number): void {
-    const sample = this.feed.advance(dtSeconds);
+    const sample = this.script.advance(dtSeconds);
     this.lastSample = sample;
 
     const fix: LocationFix = {

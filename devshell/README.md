@@ -60,6 +60,51 @@ needs a DevShell-specific code path:
 A matching IMU stream (`accelMagnitude`, `gyroMagnitude`) accompanies it, so
 dead reckoning and motion confidence behave as they do on hardware.
 
+## Simulation modes (`DevShellConfig`)
+
+`DevShellConfig` lives in `devshell/sim/config.ts` and is re-exported from
+`devshell/src/env.ts`, so the environment check and the mode selection come
+from one place. Resolution order: explicit argument → `window.__SM_DEVSHELL_CONFIG__`
+→ `?devshell=<mode>` in the URL → the default.
+
+| Mode | What it does |
+|---|---|
+| `looped` *(default)* | The drive loop DevShell shipped with. Always-IN is driven by the **live engine**. |
+| `path` | Plays back a scripted journey — GNSS path, motion sequence, and an optional Always-IN timeline. Deterministic. |
+| `static` | A fixed pose that never moves, for UI debugging. Always-IN pinned to `OFF`. |
+| `chaotic` | Randomised (but seeded) noise, lurching speed, heading wander and GNSS dropouts — stresses smoothing, snapping and camera code. |
+
+```js
+// Before the app boots:
+window.__SM_DEVSHELL_CONFIG__ = { mode: 'path' };
+// or just open  index.html?devshell=chaotic
+```
+
+Journeys live in `devshell/sim/journeys/`. Copy `sampleJourney.ts` to add one:
+
+```ts
+export const MY_JOURNEY: JourneyScript = {
+  id: 'my-run', name: 'My run', speedMps: 11,
+  path: [{ lat, lng, accuracyM, headingDeg, speedMps, holdSeconds }, ...],
+  motionSequence: [{ state: 'driving', seconds: 12 }, ...],
+  inTimeline:     [{ state: 'PREP', seconds: 6 }, ...]
+};
+```
+
+## A note on `HOLD`
+
+The shared Always-IN engine has four states: `OFF | PREP | ACTIVE | EXIT`.
+DevShell reports a **superset** that adds `HOLD`. The engine is deliberately
+*not* being given a fifth state — that would change live product behaviour on
+every platform, not just DevShell. Instead:
+
+* scripted journeys may name `HOLD` directly in their `inTimeline`;
+* otherwise DevShell derives it — `ACTIVE` plus a sustained stop (≥2.5 s) is a
+  hold at a junction.
+
+`status().engineINState` always carries the raw four-state engine value, so
+consumers that only understand those can use it unchanged.
+
 ## The simulation
 
 A vehicle drives a closed loop around the boot origin, cycling

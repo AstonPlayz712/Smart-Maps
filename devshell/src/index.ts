@@ -14,6 +14,32 @@
 export { isNativeCoreAvailable, detectEnvironment } from './env';
 export type { SMEnvironment, SMHost } from './env';
 
+// Simulation selection — DevShellConfig lives in devshell/sim and is surfaced
+// through env.ts so the environment check and the mode selection sit together.
+export {
+  DEFAULT_DEVSHELL_CONFIG,
+  resolveDevShellConfig
+} from './env';
+export type { DevShellConfig } from './env';
+
+export {
+  createSimulation,
+  LoopedDriveScript,
+  PathPlaybackScript,
+  StaticPoseScript,
+  ChaoticScript,
+  SAMPLE_JOURNEY
+} from '../sim';
+export type {
+  DevShellINState,
+  DevShellMode,
+  GnssPathPoint,
+  INPhase,
+  JourneyScript,
+  MotionPhase,
+  SimulationScript
+} from '../sim';
+
 export { SimulatedSensorFeed } from './SimulatedSensorFeed';
 export { SimulatedLocationProvider } from './SimulatedLocationProvider';
 export { SimulatedRoute, buildLoop } from './SimulatedRoute';

@@ -3,28 +3,32 @@
  * when no native core is present.
  *
  * On a native host these feeds come from GNSS + CoreMotion/SensorManager and
- * drive dead reckoning, Always-IN and the Dynamic Engine. In DevShell every one
- * of those inputs is served by `SimulatedSensorFeed` instead:
+ * drive dead reckoning, Always-IN and the Dynamic Engine. In DevShell a
+ * configurable `SimulationScript` (see `devshell/sim/`) serves all of them:
  *
  *   simulated GNSS  → LocationProviders (via SimulatedLocationProvider)
  *   simulated GNSS  → SMCore.pushGnss     (position / DR / Always-IN)
  *   simulated IMU   → SMCore.pushImu      (motion confidence / DR)
  *   simulated pose  → Dynamic Engine ego  (3D…7D pipeline)
  *
- * The runtime also seeds SMCore with a corridor built from the simulated loop,
- * so the Always-IN state machine actually runs (OFF → PREP → ACTIVE) rather
- * than idling for want of a route.
+ * The script is chosen by `DevShellConfig.mode`:
+ *   looped   — the default drive loop (live Always-IN engine)
+ *   path     — scripted journey playback (may script Always-IN outright)
+ *   static   — fixed pose for UI debugging
+ *   chaotic  — randomised noise and motion, to stress the engines
  *
- * Everything resolves synchronously on `start()` — first fix, first tick and
- * first ego state are all available before the call returns, which is what
- * keeps the boot pipeline from hanging on a lock that never arrives.
+ * BOOT CONTRACT: `start()` publishes the first fix, the first IMU packet, the
+ * first ego pose and the first Always-IN state **before it returns**. Nothing
+ * downstream waits on a lock that will never arrive.
  */
 
 import { SMCore } from '../../src/logic/SMCore';
 import type { CorridorSegment, INViewModel, JunctionNode } from '../../src/logic/types';
 import { SimulatedLocationProvider } from './SimulatedLocationProvider';
-import { buildLoop } from './SimulatedRoute';
-import type { DevShellOptions, DevShellPosition, DevShellSample } from './types';
+import { createSimulation, resolveDevShellConfig } from '../sim';
+import type { DevShellConfig } from '../sim/config';
+import type { DevShellINState, SimulationScript } from '../sim/types';
+import type { DevShellImuSample, DevShellSample } from './types';
 
 export interface DevShellEgo {
   location: { lng: number; lat: number };
@@ -34,28 +38,43 @@ export interface DevShellEgo {
 
 export interface DevShellStatus {
   active: true;
+  mode: DevShellConfig['mode'];
+  simulation: string;
+  deterministic: boolean;
   sample: DevShellSample | null;
-  inState: INViewModel['state'] | 'OFF';
+  /** DevShell's Always-IN state — a superset of the engine's (adds HOLD). */
+  inState: DevShellINState;
+  /** The raw engine state, for anything that only knows the four. */
+  engineINState: INViewModel['state'] | 'OFF';
   updateRateHz: number;
 }
+
+/** Dwell needed before an ACTIVE corridor is reported as HOLD. */
+const HOLD_DWELL_SECONDS = 2.5;
 
 export class DevShellRuntime {
   readonly provider: SimulatedLocationProvider;
   readonly core: SMCore;
+  readonly config: DevShellConfig;
+  readonly simulation: SimulationScript;
 
-  private readonly loop: [number, number][];
   private readonly tickMs: number;
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastTickAt = 0;
   private lastViewModel: INViewModel | null = null;
+  private lastEgo: DevShellEgo | null = null;
+  private lastImu: DevShellImuSample | null = null;
+  private stoppedFor = 0;
   private egoSinks = new Set<(ego: DevShellEgo) => void>();
+  private imuSinks = new Set<(imu: DevShellImuSample) => void>();
   private started = false;
 
-  constructor(origin: DevShellPosition, opts: DevShellOptions = {}) {
-    this.loop = opts.route ?? buildLoop(origin);
-    this.provider = new SimulatedLocationProvider(origin, { ...opts, route: this.loop });
+  constructor(origin: { lat: number; lng: number }, config: Partial<DevShellConfig> = {}) {
+    this.config = resolveDevShellConfig(config);
+    this.simulation = createSimulation(origin, this.config);
+    this.provider = new SimulatedLocationProvider(this.simulation, this.config.updateRateHz);
     this.core = new SMCore();
-    this.tickMs = 1000 / (opts.updateRateHz ?? 10);
+    this.tickMs = 1000 / this.config.updateRateHz;
   }
 
   // ─── lifecycle ────────────────────────────────────────────────────────────
@@ -65,18 +84,19 @@ export class DevShellRuntime {
     this.started = true;
 
     this.core.init();
-    this.core.setRoute(...this.buildCorridor());
+    const [segments, junctions] = this.buildCorridor();
+    if (segments.length > 0) this.core.setRoute(segments, junctions);
 
-    // Starting the provider publishes the first simulated fix synchronously.
-    this.provider.start();
-
-    // Feed every simulated fix into the A/E logic layer exactly as the native
-    // sensor hub would.
+    // Subscribe *before* starting the provider so the very first simulated
+    // sample is ingested rather than missed.
     this.provider.onSample((sample) => this.ingest(sample));
 
+    // Publishes the first fix synchronously, which cascades into the first IMU
+    // packet and the first ego pose through ingest().
+    this.provider.start();
+
     this.lastTickAt = Date.now();
-    // Run one tick immediately so Always-IN and the ego state are populated
-    // before start() returns — nothing downstream has to wait.
+    // One tick now, so the first Always-IN state exists before start() returns.
     this.tick(this.tickMs);
 
     this.timer = setInterval(() => {
@@ -95,6 +115,7 @@ export class DevShellRuntime {
       this.timer = null;
     }
     this.egoSinks.clear();
+    this.imuSinks.clear();
   }
 
   // ─── consumers ────────────────────────────────────────────────────────────
@@ -102,24 +123,52 @@ export class DevShellRuntime {
   /** Route simulated ego states into the Dynamic Engine (or anything else). */
   onEgo(sink: (ego: DevShellEgo) => void): () => void {
     this.egoSinks.add(sink);
-    const sample = this.provider.getLastSample();
-    if (sample) sink(this.egoFrom(sample));
+    if (this.lastEgo) sink(this.lastEgo);
     return () => {
       this.egoSinks.delete(sink);
     };
   }
 
-  status(): DevShellStatus {
-    return {
-      active: true,
-      sample: this.provider.getLastSample(),
-      inState: this.lastViewModel?.state ?? 'OFF',
-      updateRateHz: this.provider.getLastSample()?.updateRateHz ?? 0
+  /** Subscribe to the simulated IMU stream. */
+  onImu(sink: (imu: DevShellImuSample) => void): () => void {
+    this.imuSinks.add(sink);
+    if (this.lastImu) sink(this.lastImu);
+    return () => {
+      this.imuSinks.delete(sink);
     };
+  }
+
+  getEgo(): DevShellEgo | null {
+    return this.lastEgo;
+  }
+
+  getImu(): DevShellImuSample | null {
+    return this.lastImu;
   }
 
   getINViewModel(): INViewModel | null {
     return this.lastViewModel;
+  }
+
+  /** DevShell's Always-IN state — scripted when the journey says so. */
+  getINState(): DevShellINState {
+    const scripted = this.simulation.scriptedIN();
+    if (scripted) return scripted;
+    return this.deriveINState();
+  }
+
+  status(): DevShellStatus {
+    const sample = this.provider.getLastSample();
+    return {
+      active: true,
+      mode: this.config.mode,
+      simulation: this.simulation.name,
+      deterministic: this.simulation.deterministic,
+      sample,
+      inState: this.getINState(),
+      engineINState: this.lastViewModel?.state ?? 'OFF',
+      updateRateHz: sample?.updateRateHz ?? this.config.updateRateHz
+    };
   }
 
   // ─── internals ────────────────────────────────────────────────────────────
@@ -133,14 +182,26 @@ export class DevShellRuntime {
       accuracyM: sample.accuracyM,
       timestampMs: sample.timestampMs
     });
+
     // IMU — drives motion confidence and dead reckoning.
     const imu = this.provider.imu();
+    this.lastImu = imu;
     this.core.pushImu(imu);
     this.core.pushCompassHeading(sample.headingDeg, sample.timestampMs);
+    for (const sink of this.imuSinks) {
+      try {
+        sink(imu);
+      } catch (err) {
+        console.error('[devshell] imu sink error', err);
+      }
+    }
 
+    // Ego pose — the Dynamic Engine's 3D…7D input.
+    const ego = this.egoFrom(sample);
+    this.lastEgo = ego;
     for (const sink of this.egoSinks) {
       try {
-        sink(this.egoFrom(sample));
+        sink(ego);
       } catch (err) {
         console.error('[devshell] ego sink error', err);
       }
@@ -148,12 +209,30 @@ export class DevShellRuntime {
   }
 
   private tick(dtMs: number): void {
+    const dt = Math.max(1, Math.min(1000, dtMs));
+    // Track dwell so an ACTIVE corridor can be reported as HOLD.
+    const speed = this.provider.getLastSample()?.speedMps ?? 0;
+    this.stoppedFor = speed < 0.5 ? this.stoppedFor + dt / 1000 : 0;
+
     try {
-      this.lastViewModel = this.core.tick(Math.max(1, Math.min(1000, dtMs)));
+      this.lastViewModel = this.core.tick(dt);
     } catch (err) {
       // A simulation fault must never take the app down with it.
       console.error('[devshell] core tick failed', err);
     }
+  }
+
+  /**
+   * Map the engine's four-state Always-IN onto DevShell's five.
+   *
+   * The shared engine has no HOLD state and is deliberately not being given
+   * one — that would change live product behaviour. DevShell derives it:
+   * ACTIVE plus a sustained stop is a hold at a junction.
+   */
+  private deriveINState(): DevShellINState {
+    const state = this.lastViewModel?.state ?? 'OFF';
+    if (state === 'ACTIVE' && this.stoppedFor >= HOLD_DWELL_SECONDS) return 'HOLD';
+    return state;
   }
 
   private egoFrom(sample: DevShellSample): DevShellEgo {
@@ -164,17 +243,18 @@ export class DevShellRuntime {
     };
   }
 
-  /** Corridor + junctions built from the simulated loop, for Always-IN. */
+  /** Corridor + junctions from the simulation, for the Always-IN engine. */
   private buildCorridor(): [CorridorSegment[], JunctionNode[]] {
+    const loop = this.simulation.corridor();
     const segments: CorridorSegment[] = [];
     const junctions: JunctionNode[] = [];
 
-    for (let i = 0; i < this.loop.length - 1; i++) {
-      const a = this.loop[i];
-      const b = this.loop[i + 1];
+    for (let i = 0; i < loop.length - 1; i++) {
+      const a = loop[i];
+      const b = loop[i + 1];
       segments.push({
         id: `devshell-seg-${i}`,
-        name: `DevShell leg ${i + 1}`,
+        name: `${this.simulation.name} leg ${i + 1}`,
         path: [
           { lat: a[1], lng: a[0] },
           { lat: b[1], lng: b[0] }
@@ -189,8 +269,8 @@ export class DevShellRuntime {
         });
       }
     }
-    // No terminal node: the loop is endless, so Always-IN cycles
-    // OFF → PREP → ACTIVE instead of arriving and shutting down.
+    // No terminal node: DevShell corridors are loops, so Always-IN cycles
+    // rather than arriving and shutting down.
     return [segments, junctions];
   }
 }

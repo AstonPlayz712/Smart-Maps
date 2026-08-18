@@ -14,7 +14,20 @@
  * The iOS/Android native paths never call this — they are compiled binaries
  * with real frameworks bound at the adapter layer, and are untouched by
  * DevShell.
+ *
+ * `DevShellConfig` (which simulation runs, and how) is imported here and
+ * re-exported, so callers get the environment check and the simulation
+ * selection from one place.
  */
+
+import {
+  DEFAULT_DEVSHELL_CONFIG,
+  resolveDevShellConfig,
+  type DevShellConfig
+} from '../sim/config';
+
+export { DEFAULT_DEVSHELL_CONFIG, resolveDevShellConfig };
+export type { DevShellConfig };
 
 export type SMHost =
   | 'ios-native'
