@@ -6,14 +6,14 @@
 
 import Foundation
 
-public protocol TransportFeedProvider {
+protocol TransportFeedProvider {
     var id: String { get }
     var modes: Set<TransportMode> { get }
     func stopsNear(center: GeoPoint, radiusM: Double) -> [TransitStop]
     func arrivals(stopId: String, nowMs: Int64) -> [TransitArrival]
 }
 
-public final class TransportTimeEngine {
+final class TransportTimeEngine {
 
     private var providers: [TransportFeedProvider] = []
     private var board: [String: [TransitArrival]] = [:]
@@ -21,23 +21,23 @@ public final class TransportTimeEngine {
     private var lastRefreshMs: Int64 = 0
     private let refreshIntervalMs: Int64 = 15_000
 
-    public init() {}
+    init() {}
 
-    public func register(_ provider: TransportFeedProvider) {
+    func register(_ provider: TransportFeedProvider) {
         if !providers.contains(where: { $0.id == provider.id }) {
             providers.append(provider)
         }
     }
 
-    public func stops() -> [TransitStop] { nearbyStops }
+    func stops() -> [TransitStop] { nearbyStops }
 
-    public func arrivalsFor(stopId: String) -> [TransitArrival] { board[stopId] ?? [] }
+    func arrivalsFor(stopId: String) -> [TransitArrival] { board[stopId] ?? [] }
 
-    public func allArrivals() -> [TransitArrival] {
+    func allArrivals() -> [TransitArrival] {
         board.values.flatMap { $0 }.sorted { $0.expectedAtMs < $1.expectedAtMs }
     }
 
-    public func refresh(center: GeoPoint, nowMs: Int64, radiusM: Double = 800) {
+    func refresh(center: GeoPoint, nowMs: Int64, radiusM: Double = 800) {
         if nowMs - lastRefreshMs < refreshIntervalMs && !board.isEmpty { return }
         lastRefreshMs = nowMs
 
@@ -58,7 +58,7 @@ public final class TransportTimeEngine {
         board = newBoard
     }
 
-    public func reset() {
+    func reset() {
         board = [:]
         nearbyStops = []
         lastRefreshMs = 0

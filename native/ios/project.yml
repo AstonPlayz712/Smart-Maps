@@ -1,22 +1,51 @@
-# XcodeGen manifest for the native Smart Maps A/E iOS app.
-# Generate the project with:  xcodegen generate   (brew install xcodegen)
+# XcodeGen manifest — Smart Maps A/E, native iOS.
+#
+# Two targets, deliberately:
+#   SMCore       a framework: the private core module. Everything (engines,
+#                adapters, renderer, dev overlay) is `internal` to it except
+#                SMNavigationController and the value types it returns.
+#   SmartMapsAE  the app: imports SMCore and can only reach that one public
+#                interface. The module boundary is compiler-enforced, not
+#                convention.
+#
+# Generate with:  xcodegen generate   (brew install xcodegen)
 name: SmartMapsAE
 options:
   bundleIdPrefix: com.smartmaps
   deploymentTarget:
-    iOS: '16.0'
+    iOS: '17.0'          # supports iOS 17, 26 and 27 via runtime tiering
+
 targets:
+  SMCore:
+    type: framework
+    platform: iOS
+    sources: [SMCore]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.smartmaps.ae.core
+        PRODUCT_NAME: SMCore
+        SWIFT_VERSION: '5.9'
+        TARGETED_DEVICE_FAMILY: '1,2'
+        GENERATE_INFOPLIST_FILE: YES
+        DEFINES_MODULE: YES
+        BUILD_LIBRARY_FOR_DISTRIBUTION: NO
+        APPLICATION_EXTENSION_API_ONLY: NO
+
   SmartMapsAE:
     type: application
     platform: iOS
     sources: [SmartMapsAE]
+    dependencies:
+      - target: SMCore
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.smartmaps.ae
         SWIFT_VERSION: '5.9'
-        TARGETED_DEVICE_FAMILY: '1'
+        TARGETED_DEVICE_FAMILY: '1,2'
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: >-
           Smart Maps fuses GPS, Wi-Fi, cell and motion sensors to keep
           navigation accurate — including indoors and in tunnels.

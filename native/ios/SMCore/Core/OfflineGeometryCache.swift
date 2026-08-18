@@ -7,11 +7,11 @@
 
 import Foundation
 
-public final class OfflineGeometryCache {
+final class OfflineGeometryCache {
 
     private let dir: URL
 
-    public init(directory: URL? = nil) {
+    init(directory: URL? = nil) {
         if let directory {
             dir = directory
         } else {
@@ -21,30 +21,30 @@ public final class OfflineGeometryCache {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
 
-    public func save(key: String, graph: RoadGraph) {
+    func save(key: String, graph: RoadGraph) {
         guard let data = try? JSONEncoder().encode(graph) else { return }
         try? data.write(to: fileFor(key), options: .atomic)
     }
 
-    public func load(key: String) -> RoadGraph? {
+    func load(key: String) -> RoadGraph? {
         guard let data = try? Data(contentsOf: fileFor(key)) else { return nil }
         return try? JSONDecoder().decode(RoadGraph.self, from: data)
     }
 
-    public func has(key: String) -> Bool {
+    func has(key: String) -> Bool {
         FileManager.default.fileExists(atPath: fileFor(key).path)
     }
 
-    public func delete(key: String) {
+    func delete(key: String) {
         try? FileManager.default.removeItem(at: fileFor(key))
     }
 
-    public func keys() -> [String] {
+    func keys() -> [String] {
         let contents = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
         return contents.filter { $0.pathExtension == "json" }.map { $0.deletingPathExtension().lastPathComponent }
     }
 
-    public func sizeBytes() -> Int64 {
+    func sizeBytes() -> Int64 {
         let contents = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey])) ?? []
         return contents.reduce(0) { sum, url in
             sum + Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)

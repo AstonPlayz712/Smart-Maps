@@ -5,11 +5,11 @@
 
 import Foundation
 
-public final class RoutingEngine {
+final class RoutingEngine {
 
-    public init() {}
+    init() {}
 
-    public func route(graph: RoadGraph, from: GeoPoint, to: GeoPoint) -> Route? {
+    func route(graph: RoadGraph, from: GeoPoint, to: GeoPoint) -> Route? {
         guard !graph.edges.isEmpty,
               let startNode = nearestNode(graph, from),
               let goalNode = nearestNode(graph, to) else { return nil }
@@ -110,7 +110,7 @@ public final class RoutingEngine {
     }
 
     /// Live remaining distance/ETA from a position on the route.
-    public func remaining(route: Route, at: GeoPoint) -> (distM: Double, etaS: Double) {
+    func remaining(route: Route, at: GeoPoint) -> (distM: Double, etaS: Double) {
         var nearestIdx = 0
         var nearestD = Double.greatestFiniteMagnitude
         for (i, p) in route.points.enumerated() {
@@ -128,7 +128,7 @@ public final class RoutingEngine {
     }
 
     /// The next upcoming step from a position.
-    public func nextStep(route: Route, at: GeoPoint) -> RouteStep? {
+    func nextStep(route: Route, at: GeoPoint) -> RouteStep? {
         let travelledM = route.distanceM - remaining(route: route, at: at).distM
         return route.steps.first { $0.distanceM > travelledM + 5 } ?? route.steps.last
     }

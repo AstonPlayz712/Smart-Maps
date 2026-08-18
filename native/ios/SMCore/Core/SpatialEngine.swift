@@ -6,7 +6,7 @@
 
 import Foundation
 
-public final class SpatialEngine {
+final class SpatialEngine {
 
     private struct LocalEdge {
         let edge: RoadEdge
@@ -32,9 +32,9 @@ public final class SpatialEngine {
     private var hintEdge = -1
     private var localEdges: [LocalEdge] = []
 
-    public init() {}
+    init() {}
 
-    public func setGraph(_ graph: RoadGraph) {
+    func setGraph(_ graph: RoadGraph) {
         roadGraph = graph
         hintEdge = -1
         locked = false
@@ -53,17 +53,17 @@ public final class SpatialEngine {
         }
     }
 
-    public func graph() -> RoadGraph { roadGraph }
+    func graph() -> RoadGraph { roadGraph }
 
-    public func isLocked() -> Bool { locked }
+    func isLocked() -> Bool { locked }
 
-    public func reset() {
+    func reset() {
         locked = false
         unlockAccumMs = 0
         hintEdge = -1
     }
 
-    public func snap(_ fix: FusedFix, dtMs: Int64) -> SnapResult? {
+    func snap(_ fix: FusedFix, dtMs: Int64) -> SnapResult? {
         guard !localEdges.isEmpty, origin != nil else { return nil }
         let local = toLocal(fix.point)
 
@@ -109,7 +109,7 @@ public final class SpatialEngine {
     }
 
     /// Geometry-aligned heading: road tangent when locked and slow.
-    public func alignedHeading(fix: FusedFix, snap: SnapResult?) -> Double {
+    func alignedHeading(fix: FusedFix, snap: SnapResult?) -> Double {
         guard let snap, snap.onRoad, fix.speedMps < 3.0 else { return fix.headingDeg }
         let forward = snap.headingDeg
         let backward = (forward + 180).truncatingRemainder(dividingBy: 360)
@@ -120,7 +120,7 @@ public final class SpatialEngine {
     }
 
     /// Advance a point along its edge by distM — used by dead reckoning.
-    public func advanceAlongEdge(edgeId: String, offsetM: Double, distM: Double) -> SnapResult? {
+    func advanceAlongEdge(edgeId: String, offsetM: Double, distM: Double) -> SnapResult? {
         guard let le = localEdges.first(where: { $0.edge.id == edgeId }),
               let total = le.cumM.last, le.xs.count >= 2 else { return nil }
         let target = min(max(offsetM + distM, 0), total)

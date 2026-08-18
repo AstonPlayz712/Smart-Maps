@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class LocationFusionEngine {
+final class LocationFusionEngine {
 
     private var held: [FixSource: RawFix] = [:]
     private var lastFused: FusedFix?
@@ -20,25 +20,25 @@ public final class LocationFusionEngine {
         .gps: 3000, .wifi: 8000, .cell: 15000, .bluetooth: 6000
     ]
 
-    public init() {}
+    init() {}
 
-    public func ingest(_ fix: RawFix) {
+    func ingest(_ fix: RawFix) {
         guard fix.point.lat.isFinite, fix.point.lng.isFinite,
               fix.accuracyM > 0, fix.accuracyM.isFinite else { return }
         if let prev = held[fix.source], fix.timestampMs < prev.timestampMs { return }
         held[fix.source] = fix
     }
 
-    public func current() -> FusedFix? { lastFused }
+    func current() -> FusedFix? { lastFused }
 
-    public func reset() {
+    func reset() {
         held.removeAll()
         lastFused = nil
         smoothedSpeed = 0
         headingInit = false
     }
 
-    public func fuse(nowMs: Int64, movement: MovementEstimate, dtMs: Int64) -> FusedFix? {
+    func fuse(nowMs: Int64, movement: MovementEstimate, dtMs: Int64) -> FusedFix? {
         let fresh = held.filter { source, fix in
             nowMs - fix.timestampMs <= (freshnessMs[source] ?? 5000)
         }
