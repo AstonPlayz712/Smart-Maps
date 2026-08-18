@@ -1,0 +1,75 @@
+#
+# Web / DevShell build — typecheck + production build for the browser path.
+#
+# The Android and iOS workflows are path-filtered to native/**, so nothing was
+# verifying the web sources (src/, core/, engine/, automaps/, devshell/src/).
+# That is the path DevShell mode runs on, so it gets its own gate.
+#
+
+name: Web build
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'src/**'
+      - 'core/**'
+      - 'engine/**'
+      - 'automaps/**'
+      - 'devshell/src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - 'vite.config.ts'
+      - '.github/workflows/web-build.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'core/**'
+      - 'engine/**'
+      - 'automaps/**'
+      - 'devshell/src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - 'vite.config.ts'
+      - '.github/workflows/web-build.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: web-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: DevShell smoke test
+        # Boots DevShell against a simulated Windows host and asserts the
+        # fallback engages, the first fix is synchronous, and the telemetry
+        # carries every field the native providers emit.
+        run: node scripts/devshell-smoke.mjs
