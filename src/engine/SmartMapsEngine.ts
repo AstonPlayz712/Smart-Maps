@@ -18,6 +18,7 @@ import { AutoExLocationProvider } from '../services/location-providers/providers
 import { SensorFusionProvider } from '../services/location-providers/providers/SensorFusionProvider';
 import { ManualProvider } from '../services/location-providers/providers/ManualProvider';
 import { SmartMapsAE } from '../integration/SmartMapsAE';
+import { isNativeCoreAvailable, detectEnvironment, DevShellRuntime } from '../../devshell/src';
 
 export interface EngineOptions {
   initialLocation: LocationId;
@@ -59,6 +60,17 @@ export class SmartMapsEngine {
    */
   ae?: SmartMapsAE;
 
+  /**
+   * DevShell runtime. Present only when `isNativeCoreAvailable()` is false —
+   * i.e. Windows and every other non-native host. It replaces the GNSS, motion,
+   * dead-reckoning, Always-IN and Dynamic Engine hardware feeds with simulated
+   * providers so the app boots and runs with no sensors at all.
+   */
+  readonly devShell?: DevShellRuntime;
+
+  /** Unsubscribe for the DevShell → Dynamic Engine ego bridge. */
+  private devShellEgoOff?: () => void;
+
   constructor(opts: EngineOptions) {
     this.currentLocation = opts.initialLocation;
     this.renderer = new SmartMapsRenderer(this.bus);
@@ -66,16 +78,45 @@ export class SmartMapsEngine {
 
     // Location providers come up before NavigationService so the service has a
     // location source from its first tick.
-    this.locationProviders = new LocationProviders(
-      [
-        new WiFiProvider(),
-        new BluetoothBeaconProvider(),
-        new AutoExLocationProvider(),
-        new SensorFusionProvider(),
-        new ManualProvider()
-      ],
-      'wifi'
-    );
+    //
+    // On a native host the real hardware providers are used. On Windows/web
+    // there is no GNSS or IMU to read, so DevShell's simulated provider is
+    // registered as primary instead — it publishes its first fix synchronously,
+    // so nothing downstream waits on a lock that will never arrive.
+    const env = detectEnvironment();
+    if (!isNativeCoreAvailable()) {
+      const start = LOCATIONS[this.currentLocation].pose.center;
+      this.devShell = new DevShellRuntime({ lng: start[0], lat: start[1] });
+      console.info(
+        `[SmartMapsEngine] DevShell mode — ${env.reason} (host: ${env.host}). ` +
+          'GNSS, motion, dead reckoning, Always-IN and the Dynamic Engine are running on simulated feeds.'
+      );
+      this.locationProviders = new LocationProviders(
+        [
+          this.devShell.provider,
+          new WiFiProvider(),
+          new BluetoothBeaconProvider(),
+          new AutoExLocationProvider(),
+          new SensorFusionProvider(),
+          new ManualProvider()
+        ],
+        'devshell'
+      );
+    } else {
+      this.locationProviders = new LocationProviders(
+        [
+          new WiFiProvider(),
+          new BluetoothBeaconProvider(),
+          new AutoExLocationProvider(),
+          new SensorFusionProvider(),
+          new ManualProvider()
+        ],
+        'wifi'
+      );
+    }
+    // DevShell starts before the facade so the first simulated fix is already
+    // cached when LocationProviders subscribes to it.
+    this.devShell?.start();
     this.locationProviders.start();
 
     this.navigationService = new NavigationService(this);
@@ -117,6 +158,9 @@ export class SmartMapsEngine {
     void this.spotify.destroy();
     this.voice.destroy();
     this.navigationService.destroy();
+    this.devShellEgoOff?.();
+    this.devShellEgoOff = undefined;
+    this.devShell?.stop();
     this.locationProviders.stop();
     this.ae?.dispose();
     this.ae = undefined;
@@ -147,6 +191,20 @@ export class SmartMapsEngine {
         origin: { lng: center[0], lat: center[1] }
       });
       this.ae.start();
+
+      // In DevShell mode the Dynamic Engine's ego state comes from the
+      // simulation rather than from hardware, so the 3D…7D pipeline runs
+      // exactly as it would on a device.
+      if (this.devShell) {
+        const ae = this.ae;
+        this.devShellEgoOff = this.devShell.onEgo((ego) => {
+          ae.setEgo({
+            location: ego.location,
+            headingDeg: ego.headingDeg,
+            speedMps: ego.speedMps
+          });
+        });
+      }
     } catch (err) {
       console.error('[SmartMapsEngine] A/E stack failed to boot (non-fatal in Stage 1)', err);
       this.ae = undefined;

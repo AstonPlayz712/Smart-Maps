@@ -7,6 +7,7 @@ interface Props {
 }
 
 const ICON: Record<ProviderId, string> = {
+  devshell: '⧉',
   wifi: '⌖',
   bluetooth: 'ᛒ',
   autoex: '⌬',
