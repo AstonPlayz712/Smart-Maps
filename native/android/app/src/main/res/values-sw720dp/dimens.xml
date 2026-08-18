@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Smart Maps adaptive grid — LARGE TABLET bucket (sw720dp).
+     Wider pane, larger cluster, more map. -->
+<resources>
+    <dimen name="sm_grid_macro">24dp</dimen>
+    <dimen name="sm_edge_margin">24dp</dimen>
+
+    <dimen name="sm_search_height">56dp</dimen>
+    <dimen name="sm_search_max_width">640dp</dimen>
+
+    <dimen name="sm_cluster_chip">72dp</dimen>
+    <dimen name="sm_cluster_gap">12dp</dimen>
+
+    <dimen name="sm_card_corner">20dp</dimen>
+    <dimen name="sm_card_pane_width">440dp</dimen>
+    <dimen name="sm_card_inner_padding">20dp</dimen>
+
+    <integer name="sm_live_state_columns">2</integer>
+
+    <dimen name="sm_nav_icon">28dp</dimen>
+    <bool name="sm_side_navigation">true</bool>
+
+    <integer name="sm_map_meters_per_screen">1600</integer>
+
+    <bool name="sm_is_tablet">true</bool>
+</resources>

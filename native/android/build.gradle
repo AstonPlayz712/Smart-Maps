@@ -1,0 +1,23 @@
+// Smart Maps A/E — native Android app (Kotlin + Jetpack Compose).
+// Toolchain pins match devshell/ (Gradle 8.2.1, AGP 8.2.1, Kotlin 1.9.10,
+// JDK 17) so both native projects build identically in CI.
+buildscript {
+    ext.kotlin_version = '1.9.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

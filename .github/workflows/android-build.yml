@@ -1,0 +1,62 @@
+#
+# Android release APK — cloud-only build, no Android Studio, no local machine.
+#
+# Builds the native Smart Maps A/E app (native/android, Kotlin + Compose) in
+# release mode with the project's own Gradle wrapper. Release builds are
+# signed with the CI-generated debug key (see app/build.gradle) so the APK
+# installs directly from the artifact — no local signing config anywhere.
+#
+# Artifact: smart-maps-ae-release-apk  →  app-release.apk
+#
+
+name: Android release build
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'native/android/**'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK + build-tools
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - name: Make gradlew executable
+        working-directory: native/android
+        run: chmod +x gradlew
+
+      - name: Gradle assembleRelease
+        working-directory: native/android
+        run: ./gradlew assembleRelease --no-daemon --console=plain --stacktrace
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: smart-maps-ae-release-apk
+          path: native/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30

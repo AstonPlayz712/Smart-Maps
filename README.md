@@ -1,5 +1,15 @@
 # Smart Maps OS
 
+> **⚡ NATIVE MIGRATION — the mobile apps are now fully native.**
+> The Capacitor/Appflow hybrid stack has been removed. The shipping apps live in
+> **`native/android`** (Kotlin + Jetpack Compose) and **`native/ios`**
+> (Swift + SwiftUI) — see `native/ARCHITECTURE.md` and `native/MIGRATION.md`.
+> Any Appflow/Capacitor instructions further down this README are historical:
+> the directories they reference (`android/`, `ios/`, `capacitor.config.*`)
+> no longer exist. The web app below remains as the **browser-only reference
+> harness** for the TS engine layers (`src/logic`, `core/`, `engine/`,
+> `automaps/`) — it ships nothing to devices.
+
 A unified **SM · IN · AM** proto. Three coordinated modules — Smart Maps (renderer),
 Immersive Navigation (camera engine), and Ask Maps (AI command layer) — running inside
 one engine, in the browser, with London and Zante (Zakynthos) in 3D.

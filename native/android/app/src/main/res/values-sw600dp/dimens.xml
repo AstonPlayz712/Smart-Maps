@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Smart Maps adaptive grid — TABLET bucket (sw600dp, e.g. Tab S6 Lite).
+     24dp macro grid, expanded cluster, fixed card pane, two-column Live
+     State, side navigation rail. -->
+<resources>
+    <dimen name="sm_grid_macro">24dp</dimen>
+    <dimen name="sm_edge_margin">24dp</dimen>
+
+    <dimen name="sm_search_height">56dp</dimen>
+    <dimen name="sm_search_max_width">560dp</dimen>
+
+    <dimen name="sm_cluster_chip">64dp</dimen>
+    <dimen name="sm_cluster_gap">12dp</dimen>
+
+    <dimen name="sm_card_corner">20dp</dimen>
+    <dimen name="sm_card_pane_width">400dp</dimen>
+    <dimen name="sm_card_inner_padding">20dp</dimen>
+
+    <integer name="sm_live_state_columns">2</integer>
+
+    <dimen name="sm_nav_icon">28dp</dimen>
+    <bool name="sm_side_navigation">true</bool>
+
+    <integer name="sm_map_meters_per_screen">1400</integer>
+
+    <bool name="sm_is_tablet">true</bool>
+</resources>

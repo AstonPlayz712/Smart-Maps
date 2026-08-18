@@ -26,6 +26,6 @@
       "@data/*": ["src/data/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "core", "engine", "automaps"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

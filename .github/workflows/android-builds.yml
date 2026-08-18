@@ -1,18 +1,16 @@
 #
-# Android builds — cloud pipeline that runs alongside (not instead of)
-# Appflow. Produces two Android APK artifacts per run:
+# Android builds — fully native pipeline. Produces two APK artifacts per run:
 #
-#   • smart-maps-debug-apk    — the main Capacitor app (com.smartmaps.os)
-#   • devshell-debug-apk      — the native sandbox (com.smartmaps.devshell)
+#   • smartmaps-ae-debug-apk  — the native Smart Maps A/E app
+#                               (Kotlin + Jetpack Compose, native/android)
+#   • devshell-debug-apk      — the native sandbox (Kotlin + JNI + CMake,
+#                               com.smartmaps.devshell)
+#
+# No Appflow, no Capacitor, no web bundle: both jobs are pure Gradle.
 #
 # Triggers:
 #   • push to main / claude branches (with path filters)
 #   • manual workflow_dispatch with a target selector
-#
-# Why this exists: the main app builds on Appflow today, but Appflow
-# misclassifies the Capacitor project periodically and we need a
-# vendor-neutral path that can also build the DevShell — a fully native
-# Kotlin + JNI + CMake sandbox that Appflow's pipeline can't handle.
 #
 
 name: Android builds
@@ -23,16 +21,9 @@ on:
       - main
       - 'claude/**'
     paths:
-      - 'android/**'
+      - 'native/android/**'
       - 'devshell/android/**'
       - 'devshell/native/**'
-      - 'src/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'capacitor.config.ts'
-      - 'capacitor.config.json'
-      - 'ionic.config.json'
-      - 'vite.config.ts'
       - '.github/workflows/android-builds.yml'
   workflow_dispatch:
     inputs:
@@ -53,21 +44,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ─── Main Smart Maps app (Capacitor + Vite + MapLibre) ──────────────────
+  # ─── Smart Maps A/E (native Kotlin + Jetpack Compose) ───────────────────
   main-app:
-    name: Build main Smart Maps app (APK)
+    name: Build Smart Maps A/E (APK)
     if: ${{ github.event_name == 'push' || github.event.inputs.target != 'devshell' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -78,36 +63,25 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-
-      - name: Install npm dependencies
-        run: npm ci
-
-      - name: Build web bundle
-        run: npm run build
-
-      - name: Capacitor sync (Android)
-        run: npx cap sync android
+          packages: 'platforms;android-34 build-tools;34.0.0'
 
       - name: Make gradlew executable
-        working-directory: android
+        working-directory: native/android
         run: chmod +x gradlew
 
       - name: Gradle assembleDebug
-        working-directory: android
+        working-directory: native/android
         run: ./gradlew assembleDebug --no-daemon --console=plain --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: smart-maps-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: smartmaps-ae-debug-apk
+          path: native/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
 
-  # ─── DevShell (native Kotlin + JNI + CMake — Capacitor-free) ────────────
+  # ─── DevShell (native Kotlin + JNI + CMake) ─────────────────────────────
   devshell:
     name: Build DevShell (APK)
     if: ${{ github.event_name == 'push' || github.event.inputs.target != 'main' }}
@@ -126,11 +100,7 @@ jobs:
       - name: Set up Android SDK + NDK + CMake
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;25.2.9519653
-            cmake;3.22.1
+          packages: 'platforms;android-34 build-tools;34.0.0 ndk;25.2.9519653 cmake;3.22.1'
 
       - name: Make gradlew executable
         working-directory: devshell/android

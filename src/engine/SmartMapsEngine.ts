@@ -17,6 +17,7 @@ import { BluetoothBeaconProvider } from '../services/location-providers/provider
 import { AutoExLocationProvider } from '../services/location-providers/providers/AutoExLocationProvider';
 import { SensorFusionProvider } from '../services/location-providers/providers/SensorFusionProvider';
 import { ManualProvider } from '../services/location-providers/providers/ManualProvider';
+import { SmartMapsAE } from '../integration/SmartMapsAE';
 
 export interface EngineOptions {
   initialLocation: LocationId;
@@ -50,6 +51,13 @@ export class SmartMapsEngine {
   readonly moises: MoisesClient;
   readonly sm: SmModules;
   readonly askMaps: AskMaps;
+
+  /**
+   * The Advanced/Elite stack (Zante native core + Dynamic Engine + AutoMaps
+   * IN). Built lazily on attach; runs headless in Stage 1 alongside the live
+   * MapLibre surface until the native swapchain lands in Stage 2.
+   */
+  ae?: SmartMapsAE;
 
   constructor(opts: EngineOptions) {
     this.currentLocation = opts.initialLocation;
@@ -96,6 +104,7 @@ export class SmartMapsEngine {
       this.renderer.enable3DBuildings(true);
       this.renderer.enableSky();
       this.navigation.flyToPose(start.pose, { duration: 1800 });
+      this.bootAE(container, start.pose.center);
       this.bus.emit('engine:ready', undefined);
       this.bus.emit('engine:toast', `Welcome to ${start.name}`);
     });
@@ -109,10 +118,39 @@ export class SmartMapsEngine {
     this.voice.destroy();
     this.navigationService.destroy();
     this.locationProviders.stop();
+    this.ae?.dispose();
+    this.ae = undefined;
     this.bus.clear();
     this.map?.remove();
     this.map = undefined;
     this.container = undefined;
+  }
+
+  /**
+   * Stand up the A/E stack for the active map. Guarded so a native-core
+   * failure never blocks the live MapLibre experience — A/E is additive in
+   * Stage 1.
+   */
+  private bootAE(container: HTMLElement, center: [number, number]): void {
+    if (this.ae) return;
+    try {
+      const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+      this.ae = new SmartMapsAE({
+        bus: this.bus,
+        viewport: {
+          x: 0,
+          y: 0,
+          width: container.clientWidth || 1280,
+          height: container.clientHeight || 720,
+          devicePixelRatio: dpr
+        },
+        origin: { lng: center[0], lat: center[1] }
+      });
+      this.ae.start();
+    } catch (err) {
+      console.error('[SmartMapsEngine] A/E stack failed to boot (non-fatal in Stage 1)', err);
+      this.ae = undefined;
+    }
   }
 
   getMap(): MlMap | undefined {
