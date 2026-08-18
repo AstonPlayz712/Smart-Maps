@@ -135,11 +135,12 @@ struct SMRootView: View {
                         }
                     }
                     .frame(width: isRegular ? 64 : 48, height: isRegular ? 64 : 48)
-                    .background(
-                        activeMode == mode ? AnyShapeStyle(.tint) : AnyShapeStyle(.regularMaterial),
-                        in: RoundedRectangle(cornerRadius: 16)
-                    )
-                    .foregroundStyle(activeMode == mode ? AnyShapeStyle(.white) : AnyShapeStyle(.tint))
+                    .background {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.accentColor.opacity(activeMode == mode ? 1 : 0))
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                    .foregroundStyle(activeMode == mode ? Color.white : Color.accentColor)
                 }
                 .buttonStyle(.plain)
                 .shadow(radius: 4, y: 2)
@@ -240,11 +241,11 @@ struct SMRootView: View {
                 let live = sm.liveState.activeSources.contains(source)
                 HStack(spacing: 3) {
                     Circle()
-                        .fill(live ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary.opacity(0.3)))
+                        .fill(live ? Color.accentColor : Color.secondary.opacity(0.3))
                         .frame(width: 7, height: 7)
                     Text(source.rawValue)
                         .font(.system(size: 9))
-                        .foregroundStyle(live ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                        .foregroundStyle(live ? Color.primary : Color.secondary)
                 }
             }
         }

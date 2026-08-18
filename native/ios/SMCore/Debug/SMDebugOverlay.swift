@@ -51,7 +51,7 @@ struct SMDebugOverlayView: View {
         .font(.system(size: 10, weight: .regular, design: .monospaced))
         .foregroundStyle(.white)
         .padding(10)
-        .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 10))
         .frame(maxWidth: 260, alignment: .leading)
     }
 

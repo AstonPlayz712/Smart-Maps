@@ -124,7 +124,11 @@ final class SMRenderingEngine {
             brightness: 0.9,
             alpha: 0.9
         )
-        corridorNode.geometry?.firstMaterial?.diffuse.contents = corridorColor
+        // The corridor is a container of segment nodes — tint each segment,
+        // not the (geometry-less) parent.
+        for segment in corridorNode.childNodes {
+            segment.geometry?.firstMaterial?.diffuse.contents = corridorColor
+        }
 
         // 5D — environment lighting: night, tunnel and sky quality.
         let night = dimensions.d5.isNight
