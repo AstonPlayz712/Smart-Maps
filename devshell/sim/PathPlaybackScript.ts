@@ -109,7 +109,13 @@ export class PathPlaybackScript implements SimulationScript {
       speedMps: round(speed, 3),
       updateRateHz: this.rateHz,
       timestampMs: Date.now(),
-      simulated: true
+      simulated: true,
+      floorLevel: null,
+      altitudeM: 0,
+      verticalAccuracyM: 0,
+      verticalMotionState: 'static',
+      verticalTransitionConfidence: 0,
+      venueId: null
     };
   }
 
@@ -117,7 +123,9 @@ export class PathPlaybackScript implements SimulationScript {
     const driving = this.lastSpeed > 1;
     return {
       accelMagnitude: driving ? 0.5 + 0.3 * Math.sin(this.elapsed * 6.1) : 0.01,
+      verticalAccel: 0,
       gyroMagnitude: driving ? 0.05 : 0.004,
+      barometricAltitudeM: 0,
       timestampMs: Date.now()
     };
   }

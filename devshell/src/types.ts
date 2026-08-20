@@ -17,6 +17,8 @@ export interface DevShellPosition {
   lng: number;
 }
 
+export type DevShellVerticalMotionState = 'stairs' | 'lift' | 'escalator' | 'static';
+
 export interface DevShellSample {
   /** Simulated position on the DevShell route. */
   position: DevShellPosition;
@@ -36,13 +38,31 @@ export interface DevShellSample {
   timestampMs: number;
   /** Always true — marks the feed as simulated for any consumer that cares. */
   simulated: true;
+
+  // ── 3–7D indoor fields (mirrors src/telemetry/Position.ts) ───────────────
+  /** Floor index; null outdoors. */
+  floorLevel: number | null;
+  /** Height above venue ground, metres — the source of egoPose.z. */
+  altitudeM: number;
+  /** Vertical accuracy, metres (2–5 m indoors). */
+  verticalAccuracyM: number;
+  /** How the subject is moving vertically. */
+  verticalMotionState: DevShellVerticalMotionState;
+  /** Confidence a floor transition is happening, 0…1. */
+  verticalTransitionConfidence: number;
+  /** Venue providing the floor frame of reference; null outdoors. */
+  venueId: string | null;
 }
 
 export interface DevShellImuSample {
   /** Linear acceleration magnitude, gravity removed, m/s². */
   accelMagnitude: number;
+  /** Vertical component of linear acceleration, m/s² (up positive). */
+  verticalAccel: number;
   /** Rotation rate magnitude, rad/s. */
   gyroMagnitude: number;
+  /** Simulated barometric altitude, metres — drives vertical classification. */
+  barometricAltitudeM: number;
   timestampMs: number;
 }
 

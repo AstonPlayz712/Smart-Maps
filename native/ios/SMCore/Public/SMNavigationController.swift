@@ -74,8 +74,8 @@ public final class SMNavigationController: ObservableObject {
 
     // MARK: - Native surfaces
 
-    /// The real MKMapView SM drives. Members of the one public interface —
-    /// the map adapter itself stays internal.
+    /// SM's own map surface. A member of the one public interface — the map
+    /// adapter and renderer behind it stay internal.
     public func mapView() -> AnyView {
         AnyView(SMMapViewRepresentable(adapter: engine.mapAdapter))
     }

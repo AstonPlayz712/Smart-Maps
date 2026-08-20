@@ -79,7 +79,9 @@ export function detectEnvironment(): SMEnvironment {
 
   const platform = navigator.userAgent || 'unknown';
 
-  // Explicit override always wins, so DevShell can be exercised anywhere.
+  // Explicit override always wins: __SM_FORCE_DEVSHELL__ forces
+  // isNativeCoreAvailable() to false, so DevShell can be exercised anywhere —
+  // including on a device that does have a native core.
   if (window.__SM_FORCE_DEVSHELL__ === true) {
     return {
       host: hostFromUserAgent(platform),
@@ -90,10 +92,16 @@ export function detectEnvironment(): SMEnvironment {
   }
 
   // A native host injects this bridge. A browser never has it.
+  //
+  // Platform rule: iOS/Android native core -> true (they use real GNSS + IMU +
+  // Always-IN); every browser -> false (DevShell simulation). The bridge is
+  // the only thing that can return true, so a web build cannot accidentally
+  // claim a native core just because it runs on a phone.
   const bridge = window.__SM_NATIVE_CORE__;
   if (bridge?.available === true) {
+    const host = hostFromUserAgent(platform);
     return {
-      host: hostFromUserAgent(platform),
+      host: host === 'browser-mobile' ? nativeHostFor(platform) : host,
       nativeCore: true,
       reason: 'native SM core bridge present',
       platform
@@ -133,6 +141,11 @@ export function detectEnvironment(): SMEnvironment {
     reason: 'mobile browser — sensor APIs present but no native SM core',
     platform
   };
+}
+
+/** Which native host we are embedded in, once the bridge has confirmed one. */
+function nativeHostFor(ua: string): SMHost {
+  return /iphone|ipad|ipod/i.test(ua) ? 'ios-native' : 'android-native';
 }
 
 function hostFromUserAgent(ua: string): SMHost {

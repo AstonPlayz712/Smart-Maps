@@ -38,6 +38,7 @@ export class PositionEngine {
     source: 'none'
   };
   private unlockAccumMs = 0;
+  private lastAccuracyM = Number.POSITIVE_INFINITY;
   private lastChainageForSpeed: number | null = null;
   private lastTickMs = 0;
   private hasFix = false;
@@ -116,6 +117,7 @@ export class PositionEngine {
     dtMs: number,
     imuActivity: number
   ): void {
+    this.lastAccuracyM = gnss.accuracyM;
     const proj = route.projectToCorridor(gnss.position);
     if (!proj) return;
 
@@ -218,11 +220,32 @@ export class PositionEngine {
     this.lastChainageForSpeed = drResult.chainageM;
   }
 
+  /**
+   * The freshest fix worth using.
+   *
+   * BUG FIX (boot stall on a low-accuracy first fix): this used to *discard*
+   * any fix coarser than GNSS_USABLE_ACCURACY_M. A cold start, an indoor
+   * start, or an urban canyon routinely produces a first fix well past that,
+   * so the engine produced no position at all — no snap, no DR seed, nothing
+   * for the boot path to resolve on — and the app sat until the watchdog
+   * fired.
+   *
+   * Staleness is still a hard reject (an old fix is genuinely wrong), but
+   * imprecision no longer is: a coarse fix is a real fix. It is returned and
+   * flagged degraded, and the corridor-lock maths already widens its envelope
+   * by `accuracyM`, so a coarse fix positions the user without ever being
+   * trusted enough to snap them to the wrong road.
+   */
   private usableGnss(snapshot: SensorSnapshot) {
     if (!snapshot.gnss) return null;
     const { fix, ageMs } = snapshot.gnss;
     if (ageMs > GNSS_USABLE_AGE_MS) return null;
-    if (fix.accuracyM > GNSS_USABLE_ACCURACY_M) return null;
+    if (!Number.isFinite(fix.accuracyM) || fix.accuracyM <= 0) return null;
     return fix;
+  }
+
+  /** True when the current fix is coarser than navigation-grade. */
+  isDegraded(): boolean {
+    return this.state.source !== 'none' && this.lastAccuracyM > GNSS_USABLE_ACCURACY_M;
   }
 }

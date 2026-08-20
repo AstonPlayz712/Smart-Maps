@@ -10,7 +10,12 @@
  * Windows/web only. Native builds never read this.
  */
 
-import type { DevShellMode, DevShellPosition, JourneyScript } from './types';
+import type {
+  DevShellMode,
+  DevShellPosition,
+  IndoorJourneyScript,
+  JourneyScript
+} from './types';
 
 export interface DevShellConfig {
   /** Which simulation to run. */
@@ -36,6 +41,8 @@ export interface DevShellConfig {
   };
   /** Extra turbulence for `mode: 'chaotic'`, 0…1. */
   chaos: number;
+  /** Journey used by `mode: 'indoor'`. Defaults to the SM Atrium walk. */
+  indoorJourney?: IndoorJourneyScript;
 }
 
 export const DEFAULT_DEVSHELL_CONFIG: DevShellConfig = {
@@ -55,7 +62,7 @@ declare global {
   }
 }
 
-const MODES: DevShellMode[] = ['looped', 'path', 'static', 'chaotic'];
+const MODES: DevShellMode[] = ['looped', 'path', 'static', 'chaotic', 'indoor'];
 
 function isMode(value: unknown): value is DevShellMode {
   return typeof value === 'string' && (MODES as string[]).includes(value);

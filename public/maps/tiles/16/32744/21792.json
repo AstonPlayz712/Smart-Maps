@@ -1,0 +1,148 @@
+{
+ "format": "sm-vector-tile",
+ "version": 1,
+ "coord": {
+  "z": 16,
+  "x": 32744,
+  "y": 21792
+ },
+ "extent": 4096,
+ "features": [
+  {
+   "id": "road-ns-1",
+   "kind": "road",
+   "class": "street",
+   "name": "North Street 1",
+   "geometry": [
+    [
+     [
+      1024,
+      200
+     ],
+     [
+      1024,
+      3896
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "road-ew-1",
+   "kind": "road",
+   "class": "street",
+   "name": "East Street 1",
+   "geometry": [
+    [
+     [
+      200,
+      1024
+     ],
+     [
+      3896,
+      1024
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "road-ns-2",
+   "kind": "road",
+   "class": "street",
+   "name": "North Street 2",
+   "geometry": [
+    [
+     [
+      2048,
+      200
+     ],
+     [
+      2048,
+      3896
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "road-ew-2",
+   "kind": "road",
+   "class": "street",
+   "name": "East Street 2",
+   "geometry": [
+    [
+     [
+      200,
+      2048
+     ],
+     [
+      3896,
+      2048
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "road-ns-3",
+   "kind": "road",
+   "class": "street",
+   "name": "North Street 3",
+   "geometry": [
+    [
+     [
+      3072,
+      200
+     ],
+     [
+      3072,
+      3896
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "road-ew-3",
+   "kind": "road",
+   "class": "street",
+   "name": "East Street 3",
+   "geometry": [
+    [
+     [
+      200,
+      3072
+     ],
+     [
+      3896,
+      3072
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "water-1",
+   "kind": "water",
+   "geometry": [
+    [
+     [
+      0,
+      3600
+     ],
+     [
+      4096,
+      3600
+     ],
+     [
+      4096,
+      4096
+     ],
+     [
+      0,
+      4096
+     ],
+     [
+      0,
+      3600
+     ]
+    ]
+   ]
+  }
+ ]
+}

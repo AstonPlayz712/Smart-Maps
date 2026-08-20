@@ -1,0 +1,63 @@
+{
+ "format": "sm-poi-tile",
+ "version": 1,
+ "coord": {
+  "z": 16,
+  "x": 32744,
+  "y": 21792
+ },
+ "extent": 4096,
+ "pois": [
+  {
+   "id": "poi-cafe",
+   "name": "Corner Cafe",
+   "category": "cafe",
+   "position": [
+    1500,
+    1250
+   ]
+  },
+  {
+   "id": "poi-station",
+   "name": "Westminster",
+   "category": "transit",
+   "position": [
+    2700,
+    2650
+   ]
+  },
+  {
+   "id": "poi-desk",
+   "name": "Reception",
+   "category": "service",
+   "position": [
+    1400,
+    1400
+   ],
+   "floorLevel": 0,
+   "venueId": "sm-atrium"
+  },
+  {
+   "id": "poi-shop",
+   "name": "Level 1 Shop",
+   "category": "retail",
+   "position": [
+    1440,
+    1380
+   ],
+   "floorLevel": 1,
+   "venueId": "sm-atrium"
+  },
+  {
+   "id": "poi-office",
+   "name": "Level 2 Office",
+   "category": "office",
+   "position": [
+    1360,
+    1420
+   ],
+   "floorLevel": 2,
+   "venueId": "sm-atrium"
+  }
+ ]
+}

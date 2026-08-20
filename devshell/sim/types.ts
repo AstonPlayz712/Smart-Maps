@@ -20,7 +20,7 @@ import type {
 export type { DevShellImuSample, DevShellMotionState, DevShellPosition, DevShellSample };
 
 /** Which simulation drives the session. */
-export type DevShellMode = 'looped' | 'path' | 'static' | 'chaotic';
+export type DevShellMode = 'looped' | 'path' | 'static' | 'chaotic' | 'indoor';
 
 /**
  * DevShell's Always-IN vocabulary.
@@ -78,6 +78,54 @@ export interface JourneyScript {
   /** Scripted Always-IN timeline. When absent, the live engine drives it. */
   inTimeline?: INPhase[];
   /** Restart at the beginning when the path ends. Default true. */
+  loop?: boolean;
+}
+
+// ─── indoor journeys ────────────────────────────────────────────────────────
+
+export type VerticalConnector = 'stairs' | 'lift' | 'escalator';
+
+/** Walk across one floor. */
+export interface IndoorWalkPhase {
+  kind: 'walk';
+  floor: number;
+  from: DevShellPosition;
+  to: DevShellPosition;
+  seconds: number;
+}
+
+/** Stand still on one floor. */
+export interface IndoorDwellPhase {
+  kind: 'dwell';
+  floor: number;
+  at: DevShellPosition;
+  seconds: number;
+}
+
+/** Move between floors on a connector. */
+export interface IndoorVerticalPhase {
+  kind: 'vertical';
+  from: number;
+  to: number;
+  via: VerticalConnector;
+  at: DevShellPosition;
+  seconds: number;
+}
+
+export type IndoorPhase = IndoorWalkPhase | IndoorDwellPhase | IndoorVerticalPhase;
+
+/** A scripted indoor journey through a venue. */
+export interface IndoorJourneyScript {
+  id: string;
+  name: string;
+  venueId: string;
+  /** Height of one floor, metres — converts floorLevel to egoPose.z. */
+  floorHeightM: number;
+  speedMps?: number;
+  accuracyM?: number;
+  /** Vertical accuracy the simulated fix reports, metres (typically 2–5). */
+  verticalAccuracyM?: number;
+  phases: IndoorPhase[];
   loop?: boolean;
 }
 

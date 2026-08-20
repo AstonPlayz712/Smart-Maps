@@ -21,6 +21,9 @@ import type {
 import type { SimulationScript } from '../sim/types';
 import type { DevShellSample } from './types';
 
+const clamp = (v: number, lo: number, hi: number) =>
+  !Number.isFinite(v) ? lo : v < lo ? lo : v > hi ? hi : v;
+
 export class SimulatedLocationProvider implements LocationProvider {
   readonly id: ProviderId = 'devshell';
   readonly name = 'DevShell Simulation';
@@ -114,8 +117,25 @@ export class SimulatedLocationProvider implements LocationProvider {
 
   // ─── internals ────────────────────────────────────────────────────────────
 
+  /**
+   * Realistic bounds for simulated accuracy.
+   *
+   * A simulation is free to model a bad fix, but not an impossible one: an
+   * unbounded accuracy value renders as an enormous ring and skews fusion
+   * weighting. Horizontal is clamped to consumer-GNSS reality (1–200 m) and
+   * vertical to what barometric floor detection actually achieves (1–8 m).
+   */
+  private static clampAccuracy(sample: DevShellSample): DevShellSample {
+    const horizontal = clamp(sample.accuracyM, 1, 200);
+    const vertical = clamp(sample.verticalAccuracyM, 1, 8);
+    if (horizontal === sample.accuracyM && vertical === sample.verticalAccuracyM) {
+      return sample;
+    }
+    return { ...sample, accuracyM: horizontal, verticalAccuracyM: vertical };
+  }
+
   private emit(dtSeconds: number): void {
-    const sample = this.script.advance(dtSeconds);
+    const sample = SimulatedLocationProvider.clampAccuracy(this.script.advance(dtSeconds));
     this.lastSample = sample;
 
     const fix: LocationFix = {

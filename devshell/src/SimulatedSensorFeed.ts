@@ -103,7 +103,13 @@ export class SimulatedSensorFeed {
       speedMps: round(this.speedMps, 3),
       updateRateHz: this.rateHz,
       timestampMs: Date.now(),
-      simulated: true
+      simulated: true,
+      floorLevel: null,
+      altitudeM: 0,
+      verticalAccuracyM: 0,
+      verticalMotionState: 'static',
+      verticalTransitionConfidence: 0,
+      venueId: null
     };
   }
 
@@ -117,7 +123,9 @@ export class SimulatedSensorFeed {
     const vibration = driving ? 0.55 + 0.35 * Math.sin(this.elapsed * 7.3) : 0.01;
     return {
       accelMagnitude: Math.max(0, vibration + 0.12 * this.noise()),
+      verticalAccel: 0,
       gyroMagnitude: driving ? 0.05 + 0.03 * Math.abs(this.noise()) : 0.005,
+      barometricAltitudeM: 0,
       timestampMs: Date.now()
     };
   }

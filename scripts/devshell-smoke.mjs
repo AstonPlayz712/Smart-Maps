@@ -129,6 +129,44 @@ check('path playback is deterministic', runA === runB,
   runA === runB ? `${runA.length} chars identical` : 'runs diverged');
 check('path playback actually moves', new Set(runA.split('|')).size > 10);
 
+// ── 8. indoor multi-floor simulation ────────────────────────────────────────
+console.log('\n== Indoor multi-floor ==');
+const indoorRt = new DevShellRuntime({ lng: -0.1281, lat: 51.5071 }, { mode: 'indoor', updateRateHz: 20 });
+const ti = Date.now();
+indoorRt.start();
+const indoorBootMs = Date.now() - ti;
+const indoorPos = indoorRt.getPosition();
+const indoorEgo = indoorRt.getEgo();
+check('indoor start() is synchronous', indoorBootMs < 1000, `${indoorBootMs} ms`);
+for (const field of ['floorLevel', 'altitudeM', 'verticalAccuracyM', 'verticalMotionState', 'verticalTransitionConfidence']) {
+  check(`7D field ${field} published at boot`, indoorPos?.[field] !== undefined && indoorPos?.[field] !== null);
+}
+check('egoPose.z published at boot', typeof indoorEgo?.z === 'number', `z=${indoorEgo?.z}`);
+check('venue is known at boot', indoorRt.venueId() === 'sm-atrium');
+check('vertical accuracy is realistic (2-5 m)',
+  indoorPos.verticalAccuracyM >= 1 && indoorPos.verticalAccuracyM <= 8, `${indoorPos.verticalAccuracyM} m`);
+indoorRt.stop();
+
+// Drive the script directly for the full journey — fast and deterministic.
+const indoorCfg = resolveDevShellConfig({ mode: 'indoor' });
+const runIndoor = () => {
+  const sim = createSimulation({ lng: -0.1281, lat: 51.5071 }, indoorCfg);
+  const floors = [], vstates = new Set(), frames = [];
+  for (let i = 0; i < 1600; i++) {
+    const s = sim.advance(0.1);
+    if (floors[floors.length - 1] !== s.floorLevel) floors.push(s.floorLevel);
+    vstates.add(s.verticalMotionState);
+    frames.push([s.floorLevel, s.altitudeM, s.verticalMotionState].join(','));
+  }
+  return { floors, vstates: [...vstates].sort(), sig: frames.join('|') };
+};
+const ia = runIndoor(), ib = runIndoor();
+check('floor cycle is 0->1->2->1->0', ia.floors.slice(0, 5).join('->') === '0->1->2->1->0', ia.floors.join('->'));
+for (const state of ['stairs', 'lift', 'escalator', 'static']) {
+  check(`vertical state '${state}' occurs`, ia.vstates.includes(state));
+}
+check('indoor replay is deterministic', ia.sig === ib.sig);
+
 if (failures.length) {
   console.error(`\n${failures.length} DevShell check(s) failed: ${failures.join(', ')}`);
   process.exit(1);

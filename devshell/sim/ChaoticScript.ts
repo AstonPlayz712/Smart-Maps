@@ -99,7 +99,13 @@ export class ChaoticScript implements SimulationScript {
       speedMps: round(this.speed, 3),
       updateRateHz: this.config.updateRateHz,
       timestampMs: Date.now(),
-      simulated: true
+      simulated: true,
+      floorLevel: null,
+      altitudeM: 0,
+      verticalAccuracyM: 0,
+      verticalMotionState: 'static',
+      verticalTransitionConfidence: 0,
+      venueId: null
     };
   }
 
@@ -110,7 +116,9 @@ export class ChaoticScript implements SimulationScript {
         0,
         (moving ? 0.6 : 0.02) + this.noise() * 1.4 * this.chaos
       ),
+      verticalAccel: 0,
       gyroMagnitude: Math.max(0, (moving ? 0.06 : 0.005) + Math.abs(this.noise()) * 0.4 * this.chaos),
+      barometricAltitudeM: 0,
       timestampMs: Date.now()
     };
   }

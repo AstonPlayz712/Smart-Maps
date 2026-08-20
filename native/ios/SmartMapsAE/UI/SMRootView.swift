@@ -1,7 +1,7 @@
 //  SMRootView.swift
 //  SM's layered shell on iOS, in the Smart Maps design language:
 //
-//    1. map layer     — the real MKMapView, persistent and full-screen
+//    1. map layer     — SM's own renderer, persistent and full-screen
 //    2. render layer  — the SceneKit/Metal 3D–7D surface, transparent above it
 //    3. card layer    — modular cards (Live State, route, plan)
 //    4. mode cluster  — Navigate / Transit / Plan as modes, not tabs
@@ -53,7 +53,7 @@ struct SMRootView: View {
 
     var body: some View {
         ZStack {
-            // 1. MAP LAYER — real MapKit, always present, never replaced.
+            // 1. MAP LAYER — SM's own renderer, always present, never replaced.
             sm.mapView()
                 .ignoresSafeArea()
 

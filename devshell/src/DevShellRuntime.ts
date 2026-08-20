@@ -24,16 +24,30 @@
 
 import { SMCore } from '../../src/logic/SMCore';
 import type { CorridorSegment, INViewModel, JunctionNode } from '../../src/logic/types';
+import { EgoPoseTracker, type EgoPose } from '../../src/engine/EgoPose';
+import { IMUProcessor } from '../../src/telemetry/IMU';
+import { AlwaysINTracker, type AlwaysINState } from '../../src/telemetry/AlwaysIN';
+import { emptyPosition, type SMPosition } from '../../src/telemetry/Position';
 import { SimulatedLocationProvider } from './SimulatedLocationProvider';
 import { createSimulation, resolveDevShellConfig } from '../sim';
 import type { DevShellConfig } from '../sim/config';
 import type { DevShellINState, SimulationScript } from '../sim/types';
 import type { DevShellImuSample, DevShellSample } from './types';
 
+/**
+ * DevShell's ego pose. This is the full 3–7D pose — `z` is metres above venue
+ * ground, so the Dynamic Engine and the map renderer receive the vertical
+ * dimension from the simulation exactly as they would from hardware.
+ */
 export interface DevShellEgo {
   location: { lng: number; lat: number };
+  /** Vertical position, metres above venue ground. */
+  z: number;
   headingDeg: number;
   speedMps: number;
+  verticalRateMps: number;
+  floorLevel: number | null;
+  verticalMotionState: SMPosition['verticalMotionState'];
 }
 
 export interface DevShellStatus {
@@ -42,6 +56,10 @@ export interface DevShellStatus {
   simulation: string;
   deterministic: boolean;
   sample: DevShellSample | null;
+  /** The full 3–7D position the simulation is emitting. */
+  position: SMPosition;
+  /** Always-IN including the vertical phase. */
+  alwaysIN: AlwaysINState | null;
   /** DevShell's Always-IN state — a superset of the engine's (adds HOLD). */
   inState: DevShellINState;
   /** The raw engine state, for anything that only knows the four. */
@@ -64,6 +82,12 @@ export class DevShellRuntime {
   private lastViewModel: INViewModel | null = null;
   private lastEgo: DevShellEgo | null = null;
   private lastImu: DevShellImuSample | null = null;
+  private lastPosition: SMPosition = emptyPosition();
+  private lastAlwaysIN: AlwaysINState | null = null;
+  private readonly imuProcessor = new IMUProcessor();
+  private readonly egoTracker = new EgoPoseTracker();
+  private readonly alwaysIN = new AlwaysINTracker();
+  private lastSampleAt = 0;
   private stoppedFor = 0;
   private egoSinks = new Set<(ego: DevShellEgo) => void>();
   private imuSinks = new Set<(imu: DevShellImuSample) => void>();
@@ -116,6 +140,9 @@ export class DevShellRuntime {
     }
     this.egoSinks.clear();
     this.imuSinks.clear();
+    this.imuProcessor.reset();
+    this.egoTracker.reset();
+    this.alwaysIN.reset();
   }
 
   // ─── consumers ────────────────────────────────────────────────────────────
@@ -150,6 +177,22 @@ export class DevShellRuntime {
     return this.lastViewModel;
   }
 
+  /** The full 3–7D position — published before start() returns. */
+  getPosition(): SMPosition {
+    return this.lastPosition;
+  }
+
+  /** Always-IN including its vertical phase. */
+  getAlwaysIN(): AlwaysINState | null {
+    return this.lastAlwaysIN;
+  }
+
+  /** Venue the active simulation walks, when it is an indoor journey. */
+  venueId(): string | null {
+    const sim = this.simulation as { venueId?: () => string };
+    return typeof sim.venueId === 'function' ? sim.venueId() : null;
+  }
+
   /** DevShell's Always-IN state — scripted when the journey says so. */
   getINState(): DevShellINState {
     const scripted = this.simulation.scriptedIN();
@@ -161,6 +204,8 @@ export class DevShellRuntime {
     const sample = this.provider.getLastSample();
     return {
       active: true,
+      position: this.lastPosition,
+      alwaysIN: this.lastAlwaysIN,
       mode: this.config.mode,
       simulation: this.simulation.name,
       deterministic: this.simulation.deterministic,
@@ -174,6 +219,10 @@ export class DevShellRuntime {
   // ─── internals ────────────────────────────────────────────────────────────
 
   private ingest(sample: DevShellSample): void {
+    const now = sample.timestampMs;
+    const dtSeconds = this.lastSampleAt > 0 ? Math.max(0.001, (now - this.lastSampleAt) / 1000) : 1 / this.config.updateRateHz;
+    this.lastSampleAt = now;
+
     // GNSS — the same shape CoreLocation/LocationManager would deliver.
     this.core.pushGnss({
       position: { lat: sample.position.lat, lng: sample.position.lng },
@@ -183,9 +232,17 @@ export class DevShellRuntime {
       timestampMs: sample.timestampMs
     });
 
-    // IMU — drives motion confidence and dead reckoning.
+    // IMU — drives motion confidence, dead reckoning and the vertical channel.
     const imu = this.provider.imu();
     this.lastImu = imu;
+    this.imuProcessor.push({
+      accelMagnitude: imu.accelMagnitude,
+      verticalAccel: imu.verticalAccel,
+      gyroMagnitude: imu.gyroMagnitude,
+      barometricAltitudeM: imu.barometricAltitudeM,
+      timestampMs: imu.timestampMs
+    });
+    const motion = this.imuProcessor.update(dtSeconds * 1000, sample.speedMps);
     this.core.pushImu(imu);
     this.core.pushCompassHeading(sample.headingDeg, sample.timestampMs);
     for (const sink of this.imuSinks) {
@@ -196,8 +253,33 @@ export class DevShellRuntime {
       }
     }
 
-    // Ego pose — the Dynamic Engine's 3D…7D input.
-    const ego = this.egoFrom(sample);
+    // Full 3–7D position: the simulation is authoritative for the vertical
+    // fields; the IMU classifier corroborates them.
+    const position: SMPosition = {
+      lat: sample.position.lat,
+      lng: sample.position.lng,
+      accuracyM: sample.accuracyM,
+      headingDeg: sample.headingDeg,
+      speedMps: sample.speedMps,
+      floorLevel: sample.floorLevel,
+      altitudeM: sample.altitudeM,
+      verticalAccuracyM: sample.verticalAccuracyM,
+      verticalMotionState: sample.verticalMotionState,
+      verticalTransitionConfidence: sample.verticalTransitionConfidence,
+      timestampMs: sample.timestampMs,
+      venueId: sample.venueId,
+      simulated: true
+    };
+    this.lastPosition = position;
+
+    // Ego pose — the Dynamic Engine's 3D…7D input, now with z.
+    const pose = this.egoTracker.update(position, motion.verticalRateMps, dtSeconds);
+    this.lastAlwaysIN = this.alwaysIN.update(
+      position,
+      this.lastViewModel?.state ?? 'OFF',
+      dtSeconds * 1000
+    );
+    const ego = this.egoFrom(sample, pose);
     this.lastEgo = ego;
     for (const sink of this.egoSinks) {
       try {
@@ -235,11 +317,15 @@ export class DevShellRuntime {
     return state;
   }
 
-  private egoFrom(sample: DevShellSample): DevShellEgo {
+  private egoFrom(sample: DevShellSample, pose: EgoPose): DevShellEgo {
     return {
       location: { lng: sample.position.lng, lat: sample.position.lat },
+      z: pose.z,
       headingDeg: sample.headingDeg,
-      speedMps: sample.speedMps
+      speedMps: sample.speedMps,
+      verticalRateMps: pose.verticalRateMps,
+      floorLevel: sample.floorLevel,
+      verticalMotionState: sample.verticalMotionState
     };
   }
 

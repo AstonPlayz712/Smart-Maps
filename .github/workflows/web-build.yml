@@ -18,7 +18,9 @@ on:
       - 'core/**'
       - 'engine/**'
       - 'automaps/**'
-      - 'devshell/src/**'
+      - 'devshell/**'
+      - 'public/maps/**'
+      - 'scripts/**'
       - 'index.html'
       - 'package.json'
       - 'package-lock.json'
@@ -31,7 +33,9 @@ on:
       - 'core/**'
       - 'engine/**'
       - 'automaps/**'
-      - 'devshell/src/**'
+      - 'devshell/**'
+      - 'public/maps/**'
+      - 'scripts/**'
       - 'index.html'
       - 'package.json'
       - 'package-lock.json'
@@ -70,6 +74,13 @@ jobs:
 
       - name: DevShell smoke test
         # Boots DevShell against a simulated Windows host and asserts the
-        # fallback engages, the first fix is synchronous, and the telemetry
-        # carries every field the native providers emit.
+        # fallback engages, the first fix is synchronous, the telemetry carries
+        # every field the native providers emit, and the indoor journey walks
+        # its full floor cycle deterministically.
         run: node scripts/devshell-smoke.mjs
+
+      - name: Map / telemetry / routing smoke test
+        # Guards the v2 engine: tile projection and POI alignment, the accuracy
+        # ring maths and clamp, the debugMode gate, indoor floor clipping,
+        # multi-floor routing, and the telemetry bug fixes.
+        run: node scripts/map-smoke.mjs

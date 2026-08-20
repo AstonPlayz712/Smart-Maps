@@ -10,7 +10,7 @@
 //    4. dead reckoning — DR v3 (27) / v2 (26/17) when GNSS is stale
 //    5. dimensions     — the 3D–7D engine
 //    6. live state     — the public readout
-//    7. presentation   — MapKit camera + Metal/SceneKit renderer
+//    7. presentation   — SM's own map renderer + Metal/SceneKit
 
 import Foundation
 import CoreLocation
@@ -273,7 +273,7 @@ final class SMCoreEngine: SMLocationAdapterDelegate {
             timestamp: now
         )
 
-        // 8. presentation — real MapKit camera + native renderer
+        // 8. presentation — SM's own renderer (no MapKit)
         if let coordinate {
             mapAdapter.updateCamera(
                 center: coordinate,
@@ -281,6 +281,14 @@ final class SMCoreEngine: SMLocationAdapterDelegate {
                 distance: cameraDistance(for: speed),
                 pitchDeg: cameraPitch(),
                 animated: true
+            )
+            // The renderer needs the accuracy and floor to size the ring and
+            // clip indoor layers — the same inputs the web renderer takes.
+            mapAdapter.setPosition(
+                coordinate,
+                accuracyM: accuracy,
+                verticalAccuracyM: dims.d3.roadLevel.confidence > 0 ? 3.0 : 0,
+                floorLevel: dims.d3.roadLevel.level == 0 ? nil : dims.d3.roadLevel.level
             )
         }
         rendering.update(dimensions: dims, liveState: liveState)

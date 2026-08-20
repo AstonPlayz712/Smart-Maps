@@ -44,12 +44,24 @@ export class StaticPoseScript implements SimulationScript {
       speedMps: this.motionState === 'still' ? 0 : this.config.speedMps,
       updateRateHz: this.config.updateRateHz,
       timestampMs: Date.now(),
-      simulated: true
+      simulated: true,
+      floorLevel: null,
+      altitudeM: 0,
+      verticalAccuracyM: 0,
+      verticalMotionState: 'static',
+      verticalTransitionConfidence: 0,
+      venueId: null
     };
   }
 
   imu(): DevShellImuSample {
-    return { accelMagnitude: 0.01, gyroMagnitude: 0.004, timestampMs: Date.now() };
+    return {
+      accelMagnitude: 0.01,
+      verticalAccel: 0,
+      gyroMagnitude: 0.004,
+      barometricAltitudeM: 0,
+      timestampMs: Date.now()
+    };
   }
 
   /** Pinned: nothing is moving, so Always-IN stays off. */
