@@ -25,6 +25,13 @@ import type {
 export interface TileSourceOptions {
   /** Root the four families hang off. Relative by default — WebView-safe. */
   baseUrl?: string;
+  /**
+   * Deepest zoom the source actually publishes. Requests past this are served
+   * by the covering parent tile ("overzoom") instead of 404-ing, which is how
+   * every tile renderer keeps drawing when you zoom past the data. Without it
+   * the map goes blank the moment the camera passes the source's max zoom.
+   */
+  maxSourceZoom?: number;
   /** Max entries per cache before least-recently-used eviction. */
   cacheSize?: number;
   /** Fetch implementation, injectable for tests/native hosts. */
@@ -40,6 +47,7 @@ export type TileFamily = 'tiles' | 'buildings' | 'poi';
 
 export class TileSource {
   private readonly baseUrl: string;
+  private readonly maxSourceZoom: number | null;
   private readonly cacheSize: number;
   private readonly doFetch: typeof fetch;
 
@@ -56,6 +64,7 @@ export class TileSource {
     // file:// or a custom scheme cannot fetch an absolute http origin without
     // tripping CORS — which is exactly why bundled meshes failed to load.
     this.baseUrl = (opts.baseUrl ?? '/maps').replace(/\/+$/, '');
+    this.maxSourceZoom = opts.maxSourceZoom ?? null;
     this.cacheSize = opts.cacheSize ?? 128;
     this.doFetch =
       opts.fetchImpl ??
@@ -64,8 +73,24 @@ export class TileSource {
 
   // ─── URLs ─────────────────────────────────────────────────────────────────
 
+  /**
+   * Clamp a requested tile to the deepest published zoom, walking up to the
+   * ancestor tile that covers it. Geometry stays correct because tile-local
+   * coordinates are converted to lng/lat, which is zoom-independent.
+   */
+  sourceCoord(coord: TileCoord): TileCoord {
+    if (this.maxSourceZoom === null || coord.z <= this.maxSourceZoom) return coord;
+    const steps = coord.z - this.maxSourceZoom;
+    return {
+      z: this.maxSourceZoom,
+      x: Math.floor(coord.x / Math.pow(2, steps)),
+      y: Math.floor(coord.y / Math.pow(2, steps))
+    };
+  }
+
   url(family: TileFamily, coord: TileCoord): string {
-    return `${this.baseUrl}/${family}/${coord.z}/${coord.x}/${coord.y}.json`;
+    const c = this.sourceCoord(coord);
+    return `${this.baseUrl}/${family}/${c.z}/${c.x}/${c.y}.json`;
   }
 
   venueUrl(venueId: string): string {
@@ -75,19 +100,19 @@ export class TileSource {
   // ─── loads ────────────────────────────────────────────────────────────────
 
   async vectorTile(coord: TileCoord): Promise<VectorTile | null> {
-    return this.load(this.vector, key(coord), this.url('tiles', coord), (raw) =>
+    return this.load(this.vector, key(this.sourceCoord(coord)), this.url('tiles', coord), (raw) =>
       isFormat(raw, 'sm-vector-tile') ? (raw as VectorTile) : null
     );
   }
 
   async buildingTile(coord: TileCoord): Promise<BuildingTile | null> {
-    return this.load(this.buildings, key(coord), this.url('buildings', coord), (raw) =>
+    return this.load(this.buildings, key(this.sourceCoord(coord)), this.url('buildings', coord), (raw) =>
       isFormat(raw, 'sm-building-tile') ? (raw as BuildingTile) : null
     );
   }
 
   async poiTile(coord: TileCoord): Promise<PoiTile | null> {
-    return this.load(this.poi, key(coord), this.url('poi', coord), (raw) =>
+    return this.load(this.poi, key(this.sourceCoord(coord)), this.url('poi', coord), (raw) =>
       isFormat(raw, 'sm-poi-tile') ? (raw as PoiTile) : null
     );
   }

@@ -269,7 +269,10 @@ export class MapRenderer {
             roads.push({
               feature,
               // Extent comes from the tile, never assumed — see types.ts.
-              path: ring.map(([x, y]) => tileToLngLat(coord, vector.extent, x, y))
+              // Project with the coord the tile itself reports, not the one we
+              // asked for: under overzoom they differ, and using the request
+              // coord smears the parent tile across every child position.
+              path: ring.map(([x, y]) => tileToLngLat(vector.coord, vector.extent, x, y))
             });
           }
         }
@@ -285,7 +288,7 @@ export class MapRenderer {
           buildings.push({
             mesh,
             footprint: mesh.footprint.map(([x, y]) =>
-              tileToLngLat(coord, buildingTile.extent, x, y)
+              tileToLngLat(buildingTile.coord, buildingTile.extent, x, y)
             ),
             heightM: mesh.heightM,
             minHeightM: mesh.minHeightM ?? 0
@@ -298,7 +301,7 @@ export class MapRenderer {
           if (!this.indoor.isOnActiveFloor(poi.floorLevel)) continue;
           pois.push({
             poi,
-            position: tileToLngLat(coord, poiTile.extent, poi.position[0], poi.position[1])
+            position: tileToLngLat(poiTile.coord, poiTile.extent, poi.position[0], poi.position[1])
           });
         }
       }
@@ -344,6 +347,7 @@ export class MapRenderer {
 
   private visibleTiles(centre: TileCoord): TileCoord[] {
     const coords: TileCoord[] = [];
+    const seen = new Set<string>();
     const span = 1 << centre.z;
     for (let dx = -this.config.tileRadius; dx <= this.config.tileRadius; dx++) {
       for (let dy = -this.config.tileRadius; dy <= this.config.tileRadius; dy++) {
@@ -351,7 +355,14 @@ export class MapRenderer {
         const y = centre.y + dy;
         // Clamp y (no wrap at the poles), wrap x (the world is a cylinder).
         if (y < 0 || y >= span) continue;
-        coords.push({ z: centre.z, x: ((x % span) + span) % span, y });
+        const requested = { z: centre.z, x: ((x % span) + span) % span, y };
+        // Under overzoom several requested tiles share one source tile —
+        // fetching and drawing it once is both correct and cheaper.
+        const source = this.tiles.sourceCoord(requested);
+        const key = `${source.z}/${source.x}/${source.y}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        coords.push(requested);
       }
     }
     return coords;
