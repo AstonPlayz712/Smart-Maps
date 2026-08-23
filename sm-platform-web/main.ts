@@ -1,19 +1,24 @@
 /**
- * Web shell for the Smart-Maps Dynamic Spatial Engine.
+ * The Smart-Maps web app.
  *
- * This file is a *shell*: it owns a canvas, subscribes to the browser's
- * sensors, and drives a frame loop. Every spatial decision belongs to the
- * engine, which is why the whole file amounts to three calls —
- * `init`, `updatePosition`, `renderFrame` — and no engine internals appear
- * anywhere in it.
+ * This is a *shell*: it owns a canvas, picks a sample source, and drives a
+ * frame loop. Every spatial decision belongs to the engine, which is why the
+ * whole file amounts to three calls — `init`, `updatePosition`, `renderFrame`.
+ *
+ * There is no bootloader, no watchdog, no deadline and no failure screen. The
+ * engine has no start-up phase to fail: `init()` wires its modules and
+ * resolves, and from that point every call is answerable. A tile that has not
+ * loaded or a fix that has not landed is missing data, not a broken app, and
+ * the map keeps drawing around it.
  *
  * `sm-platform-mobile/App.tsx` makes the same three calls with the same sample
- * shapes, so the two platforms behave identically.
+ * shapes, so the two platforms derive identical state from identical traces.
  */
 
 import { DSE } from 'sm-core';
-import type { GnssSample, ImuSample } from 'sm-core';
 import { Canvas2DBackend } from 'sm-core/renderer';
+import { createSampleSource, type SampleSource } from './sensors';
+import { createHud } from './hud';
 
 export interface WebShellOptions {
   /** Canvas to draw into. Looked up as `#sm-canvas` when omitted. */
@@ -24,11 +29,14 @@ export interface WebShellOptions {
   maxSourceZoom?: number;
   /** Venue to enter on start, for an indoor session. */
   venueId?: string;
+  /** Override where samples come from. Defaults to hardware, then simulation. */
+  source?: SampleSource;
   dark?: boolean;
 }
 
 export interface WebShell {
   readonly dse: DSE;
+  readonly source: SampleSource;
   stop(): void;
 }
 
@@ -43,10 +51,15 @@ export async function startSmartMaps(options: WebShellOptions = {}): Promise<Web
     surface: backend,
     tileBaseUrl: options.tileBaseUrl,
     maxSourceZoom: options.maxSourceZoom
+    // debugMode is omitted on purpose. It defaults to false, and the shell
+    // exposes no way to turn it on — internal layers are a development tool,
+    // not a user-facing control.
   });
 
   await dse.init();
   if (options.venueId) await dse.enterVenue(options.venueId);
+
+  const hud = createHud();
 
   const resize = () => {
     const rect = canvas.getBoundingClientRect();
@@ -56,77 +69,50 @@ export async function startSmartMaps(options: WebShellOptions = {}): Promise<Web
   resize();
   window.addEventListener('resize', resize);
 
-  // ── sensors ───────────────────────────────────────────────────────────────
-  // The IMU is optional: plenty of browsers expose no motion events at all, and
-  // the engine is built to run on GNSS alone. A still sample is the honest
-  // stand-in — it claims no motion rather than inventing some.
-  let imu: ImuSample = stillSample(Date.now());
+  const source = options.source ?? createSampleSource();
+  source.start((gnss, imu) => {
+    dse.updatePosition(gnss, imu);
+    hud.update(dse.getState());
+  });
 
-  const onMotion = (event: DeviceMotionEvent) => {
-    const a = event.acceleration ?? event.accelerationIncludingGravity;
-    const r = event.rotationRate;
-    imu = {
-      accelMagnitude: a ? Math.hypot(a.x ?? 0, a.y ?? 0, a.z ?? 0) : 0,
-      verticalAccel: a?.z ?? 0,
-      gyroMagnitude: r ? toRadians(Math.hypot(r.alpha ?? 0, r.beta ?? 0, r.gamma ?? 0)) : 0,
-      timestampMs: Date.now()
-    };
-  };
-  window.addEventListener('devicemotion', onMotion);
-
-  let watchId: number | null = null;
-  if (typeof navigator !== 'undefined' && navigator.geolocation) {
-    watchId = navigator.geolocation.watchPosition(
-      (fix) => dse.updatePosition(toGnssSample(fix), imu),
-      // A geolocation error is not a failure state for the engine — it simply
-      // means no new fix, and the last one stands.
-      (err) => console.warn('[sm-platform-web] geolocation', err.message),
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 15_000 }
-    );
-  }
-
-  // ── frame loop ────────────────────────────────────────────────────────────
-  let raf = 0;
-  const frame = () => {
+  let raf = requestAnimationFrame(function frame() {
     dse.renderFrame();
     raf = requestAnimationFrame(frame);
-  };
-  raf = requestAnimationFrame(frame);
+  });
 
   return {
     dse,
+    source,
     stop() {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('devicemotion', onMotion);
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      source.stop();
       dse.dispose();
     }
   };
 }
 
-function toGnssSample(fix: GeolocationPosition): GnssSample {
-  const c = fix.coords;
-  return {
-    lat: c.latitude,
-    lng: c.longitude,
-    accuracyM: c.accuracy,
-    headingDeg: c.heading,
-    speedMps: c.speed,
-    altitudeM: c.altitude,
-    verticalAccuracyM: c.altitudeAccuracy,
-    timestampMs: fix.timestamp
-  };
-}
-
-function stillSample(timestampMs: number): ImuSample {
-  return { accelMagnitude: 0, verticalAccel: 0, gyroMagnitude: 0, timestampMs };
-}
-
-function toRadians(deg: number): number {
-  return (deg * Math.PI) / 180;
-}
-
 function prefersDark(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/**
+ * Auto-start when this module is the page's entry and the shell markup is
+ * present. Importing it from a test or another host does nothing, because the
+ * canvas will not be there.
+ */
+function autoStart(): void {
+  if (typeof document === 'undefined') return;
+  if (!document.getElementById('sm-canvas')) return;
+  void startSmartMaps({ maxSourceZoom: 16 }).catch((err) => {
+    // Nothing here is recoverable by the user, so there is no recovery screen
+    // to show them: a shell that cannot find its own canvas is a build error.
+    console.error('[sm-platform-web] shell failed to start', err);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', autoStart, { once: true });
+} else {
+  autoStart();
 }

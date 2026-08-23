@@ -5,3 +5,4 @@ export { SmartAI } from '../sm-core/ai';
 export { AEModule } from '../sm-core/ae';
 export { TilePipeline } from '../sm-core/tiles';
 export { MapRenderer } from '../sm-core/renderer';
+export { motionLabel, floorLabel } from '../sm-platform-web/hud';

@@ -33,6 +33,36 @@ import kotlin.math.cos
  *
  * Camera centres on the fused position; scale comes from the adaptive bucket
  * (phones ~900 m across, tablets 1400–1600 m).
+ *
+ * ── PRE-V2 — DO NOT EXTEND ─────────────────────────────────────────────────
+ * TODO(renderer-v2): this surface predates Renderer v2 and is the last
+ *   platform still on the old path. Web (`sm-core/renderer`) and iOS
+ *   (`SMMapAdapter`) were ported; Android was not. Three v2 rules are missing
+ *   here, and each one is a real defect on this surface today:
+ *
+ *   1. ACCURACY-RING CLAMP — the halo below is a hard-coded 46 px radius that
+ *      ignores the reported accuracy entirely. It is a decoration, not an
+ *      accuracy indicator: a 5 m fix and a 500 m fix draw the same circle.
+ *      v2 converts metres to pixels against the live zoom and latitude,
+ *      floors at 6 px and caps at 80 px — see
+ *      [com.smartmaps.ae.ui.render.resolveAccuracyRing].
+ *
+ *   2. DEBUGMODE GATE — this surface has no notion of internal layers, so
+ *      there is no flag stopping one being added straight into the user's
+ *      map. v2 builds every internal layer through
+ *      [com.smartmaps.ae.ui.render.buildInternalDebugLayer], which returns
+ *      null unless the gate is open, and the gate defaults to closed.
+ *
+ *   3. FLOOR CLIPPING — every edge in [graph] is drawn regardless of which
+ *      floor it belongs to, so in a multi-storey venue other floors bleed
+ *      through the active one. v2 puts every indoor feature through
+ *      [com.smartmaps.ae.ui.render.isOnActiveFloor] first.
+ *
+ *   Migration target is [com.smartmaps.ae.ui.render.MapSurfaceV2], which
+ *   already implements all three. What it still needs before it can replace
+ *   this composable is the SM-VT v2 tile pipeline (see `sm-core/tiles`) to
+ *   feed it geometry — until then it has the rules but no tiles, and this has
+ *   the tiles-equivalent (the local road graph) but none of the rules.
  */
 @Composable
 fun MapSurface(
@@ -82,6 +112,10 @@ fun MapSurface(
         }
 
         // ── road graph
+        // TODO(renderer-v2): no floor clipping — every edge draws on every
+        //   floor. Gate each one on isOnActiveFloor(activeLevel, edge.floor)
+        //   once RoadGraph carries a floor, so other storeys stop bleeding
+        //   through the active floor plan.
         for (edge in graph.edges) {
             if (edge.path.size < 2) continue
             val path = Path()
@@ -115,6 +149,10 @@ fun MapSurface(
         }
 
         // ── fused position: accuracy halo + heading arrow
+        // TODO(renderer-v2): the 46f radius is fixed and unrelated to the
+        //   actual accuracy. Replace with resolveAccuracyRing(position, zoom)
+        //   from ui.render — metres to pixels, clamped, and suppressed indoors
+        //   in favour of vertical accuracy.
         if (position != null) {
             val c = toScreen(position)
             drawCircle(positionColor.copy(alpha = 0.18f), radius = 46f, center = c)

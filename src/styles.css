@@ -503,48 +503,6 @@ body {
   font-family: inherit;
 }
 
-/* ─── Safe Mode (boot stability fallback) ────────────────────────────── */
-
-.safe-mode {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  color: var(--fg);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  z-index: 100;
-}
-.safe-mode-panel {
-  max-width: 420px; width: 100%;
-  border: 1px solid var(--hairline);
-  padding: 24px;
-  background: var(--panel-strong);
-  backdrop-filter: blur(20px);
-  display: flex; flex-direction: column; gap: 12px;
-}
-.safe-mode-title {
-  font-size: 18px; font-weight: 500;
-  color: var(--fg);
-  text-transform: uppercase; letter-spacing: 0.1em;
-  border-bottom: 1px solid var(--hairline);
-  padding-bottom: 8px; margin-bottom: 4px;
-}
-.safe-mode p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-.safe-mode-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.safe-mode-actions button {
-  flex: 1; min-width: 140px;
-  background: transparent;
-  border: 1px solid var(--hairline);
-  color: var(--fg);
-  padding: 10px 14px;
-  font-family: inherit; font-size: 11px;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  cursor: pointer;
-}
-.safe-mode-actions button:hover { border-color: var(--hairline-strong); background: rgba(255,255,255,0.04); }
-.safe-mode-actions button.primary {
-  background: var(--accent); border-color: var(--accent); color: #0a0f1c; font-weight: 600;
-}
-
 /* ─── Media chip + drawer (unchanged styling — hosted from TopStrip → MediaDrawer) ── */
 
 .media-drawer {

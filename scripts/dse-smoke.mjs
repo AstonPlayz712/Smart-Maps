@@ -8,9 +8,10 @@
  *   4. frames carry no internal layers unless debugMode is explicitly on
  *   5. web and mobile drive identical state from an identical trace
  *   6. entering a venue resolves the vertical dimension to a floor
+ *   7. the web shell is the DSE shell, with no OS-style boot path anywhere
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -53,6 +54,14 @@ const imu = (t, over = {}) => ({
 });
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+/** A plain position, for the pure label helpers. */
+const basePosition = {
+  lat: 51.5071, lng: -0.1281, accuracyM: 8, headingDeg: 0, speedMps: 0,
+  floorLevel: null, altitudeM: 0, verticalAccuracyM: 3,
+  verticalMotionState: 'static', verticalTransitionConfidence: 0,
+  timestampMs: 0, venueId: null, simulated: false
+};
 
 /**
  * A clock the test drives, so results are deterministic and fix age is
@@ -157,6 +166,45 @@ await settle();
 const indoorFrame = indoorSurface.frames[indoorSurface.frames.length - 1];
 check('frame is clipped to the active floor', indoorFrame.activeFloorLevel === 1);
 check('indoor frame still carries no debug layer', indoorFrame.debug === null);
+
+// ── 7. the web shell is the DSE shell ───────────────────────────────────────
+// Static guards, not behavioural ones: they exist so the OS-style boot path
+// cannot creep back in unnoticed. Smart-Maps is an engine, not an operating
+// system, and the engine has no start-up phase that can fail — so there is
+// nothing for a watchdog to watch or a Safe Mode to recover.
+console.log('\n== Web shell ==');
+const html = readFileSync('index.html', 'utf8');
+check('index.html loads the DSE shell', html.includes('/sm-platform-web/main.ts'));
+check('index.html has a canvas for the renderer', html.includes('id="sm-canvas"'));
+for (const marker of ['__SM_BOOT_', 'Safe Mode', "didn't finish booting", 'sm-boot', 'src/main.tsx']) {
+  check(`index.html carries no "${marker}"`, !html.includes(marker));
+}
+check('src/boot is gone', !existsSync('src/boot'));
+check('the React boot entry is gone', !existsSync('src/main.tsx'));
+
+// The read-out shows what a person navigating wants and nothing more: no ego
+// z, no raw Always-IN state, no update rate, no dimensional depth.
+for (const internal of ['data-sm="ego', 'data-sm="in-state', 'data-sm="rate', 'data-sm="depth', 'Debug']) {
+  check(`the shell exposes no "${internal}"`, !html.includes(internal));
+}
+
+// Measured speed has the final say over the classifier — a "driving" label on
+// a stationary reading describes a parked car.
+const drivingButParked = {
+  position: { ...basePosition, speedMps: 0.2 },
+  motion: { horizontal: 'driving' },
+  alwaysIN: { verticalMotionState: 'static' },
+  activeFloorLevel: null
+};
+check('HUD never says Driving while measured stationary',
+  m.motionLabel(drivingButParked) === 'Stationary', m.motionLabel(drivingButParked));
+check('HUD says Driving when actually moving',
+  m.motionLabel({ ...drivingButParked, position: { ...basePosition, speedMps: 14 } }) === 'Driving');
+check('HUD names the connector mid-transition',
+  m.floorLabel({ ...drivingButParked, alwaysIN: { verticalMotionState: 'lift' } }) === 'In the lift');
+check('HUD reads Outdoors with no floor', m.floorLabel(drivingButParked) === 'Outdoors');
+check('HUD names the floor indoors',
+  m.floorLabel({ ...drivingButParked, activeFloorLevel: 2 }) === 'Floor 2');
 
 console.log('');
 if (failures.length) {

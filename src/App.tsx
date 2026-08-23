@@ -13,7 +13,6 @@ import { SmartMapsEngine } from './engine/SmartMapsEngine';
 import { LOCATIONS, type LocationId } from './modules/smart-maps/locations';
 import { AutoExBridge } from './modules/autolink/AutoExBridge';
 import type { AutoExLocationProvider } from './services/location-providers/providers/AutoExLocationProvider';
-import { markBootReady } from './boot';
 
 export default function App() {
   const [engine, setEngine] = useState<SmartMapsEngine | null>(null);
@@ -30,7 +29,6 @@ export default function App() {
       initialLocation: 'london',
       onReady: () => {
         setReady(true);
-        markBootReady();
       },
       onToast: (msg) => {
         setToast(msg);
