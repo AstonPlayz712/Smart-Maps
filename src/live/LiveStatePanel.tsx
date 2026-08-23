@@ -5,11 +5,11 @@
  * vertical motion, and the Always-IN phase.
  */
 
-import type { AlwaysINState } from '../telemetry/AlwaysIN';
-import { verticalGuidance } from '../telemetry/AlwaysIN';
-import type { SMPosition } from '../telemetry/Position';
-import { positionQuality } from '../telemetry/Position';
-import type { HorizontalMotionState } from '../telemetry/IMU';
+import type { AlwaysINState } from '../../sm-core/ae/AlwaysIN';
+import { verticalGuidance } from '../../sm-core/ae/AlwaysIN';
+import type { SMPosition } from '../../sm-core/ae/Position';
+import { positionQuality } from '../../sm-core/ae/Position';
+import type { HorizontalMotionState } from '../../sm-core/ae/IMU';
 
 export interface LiveStatePanelProps {
   position: SMPosition | null;

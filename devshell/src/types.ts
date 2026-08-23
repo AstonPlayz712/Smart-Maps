@@ -39,7 +39,7 @@ export interface DevShellSample {
   /** Always true — marks the feed as simulated for any consumer that cares. */
   simulated: true;
 
-  // ── 3–7D indoor fields (mirrors src/telemetry/Position.ts) ───────────────
+  // ── 3–7D indoor fields (mirrors sm-core/ae/Position.ts) ───────────────
   /** Floor index; null outdoors. */
   floorLevel: number | null;
   /** Height above venue ground, metres — the source of egoPose.z. */

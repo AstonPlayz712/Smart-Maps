@@ -22,12 +22,12 @@
  * downstream waits on a lock that will never arrive.
  */
 
-import { SMCore } from '../../src/logic/SMCore';
-import type { CorridorSegment, INViewModel, JunctionNode } from '../../src/logic/types';
-import { EgoPoseTracker, type EgoPose } from '../../src/engine/EgoPose';
-import { IMUProcessor } from '../../src/telemetry/IMU';
-import { AlwaysINTracker, type AlwaysINState } from '../../src/telemetry/AlwaysIN';
-import { emptyPosition, type SMPosition } from '../../src/telemetry/Position';
+import { SMCore } from '../../sm-core/ae/dynamic/SMCore';
+import type { CorridorSegment, INViewModel, JunctionNode } from '../../sm-core/ae/dynamic/types';
+import { EgoPoseTracker, type EgoPose } from '../../sm-core/ae/EgoPose';
+import { IMUProcessor } from '../../sm-core/ae/IMU';
+import { AlwaysINTracker, type AlwaysINState } from '../../sm-core/ae/AlwaysIN';
+import { emptyPosition, type SMPosition } from '../../sm-core/ae/Position';
 import { SimulatedLocationProvider } from './SimulatedLocationProvider';
 import { createSimulation, resolveDevShellConfig } from '../sim';
 import type { DevShellConfig } from '../sim/config';
@@ -48,6 +48,8 @@ export interface DevShellEgo {
   verticalRateMps: number;
   floorLevel: number | null;
   verticalMotionState: SMPosition['verticalMotionState'];
+  /** Epoch ms this pose represents — same field the engine's EgoPose carries. */
+  timestampMs: number;
 }
 
 export interface DevShellStatus {
@@ -325,7 +327,8 @@ export class DevShellRuntime {
       speedMps: sample.speedMps,
       verticalRateMps: pose.verticalRateMps,
       floorLevel: sample.floorLevel,
-      verticalMotionState: sample.verticalMotionState
+      verticalMotionState: sample.verticalMotionState,
+      timestampMs: sample.timestampMs
     };
   }
 

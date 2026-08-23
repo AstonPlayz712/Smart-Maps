@@ -6,13 +6,13 @@
  * everything here is the engine built in this branch.
  */
 
-import { MapRenderer } from '../src/map/MapRenderer';
-import { TileSource } from '../src/map/TileSource';
-import { Canvas2DBackend } from '../src/map/backends/Canvas2DBackend';
+import { MapRenderer } from '../sm-core/renderer/MapRenderer';
+import { TileSource } from '../sm-core/tiles/TileSource';
+import { Canvas2DBackend } from '../sm-core/renderer/backends/Canvas2DBackend';
 import { DevShellRuntime } from '../devshell/src/DevShellRuntime';
 import { motionLabel, floorLabel, verticalLabel } from '../src/live/LiveStatePanel';
-import { RoutingEngine } from '../src/routing/RoutingEngine';
-import type { IndoorVenue } from '../src/map/types';
+import { RoutingEngine } from '../sm-core/routing/RoutingEngine';
+import type { IndoorVenue } from '../sm-core/tiles/types';
 
 declare global {
   interface Window {
