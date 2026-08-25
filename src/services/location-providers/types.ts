@@ -1,4 +1,5 @@
 export type ProviderId =
+  | 'devshell'
   | 'wifi'
   | 'bluetooth'
   | 'autoex'

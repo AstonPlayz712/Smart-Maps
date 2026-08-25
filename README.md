@@ -1,14 +1,22 @@
-# Smart Maps OS
+# Smart Maps
 
-> **⚡ NATIVE MIGRATION — the mobile apps are now fully native.**
-> The Capacitor/Appflow hybrid stack has been removed. The shipping apps live in
-> **`native/android`** (Kotlin + Jetpack Compose) and **`native/ios`**
-> (Swift + SwiftUI) — see `native/ARCHITECTURE.md` and `native/MIGRATION.md`.
-> Any Appflow/Capacitor instructions further down this README are historical:
-> the directories they reference (`android/`, `ios/`, `capacitor.config.*`)
-> no longer exist. The web app below remains as the **browser-only reference
-> harness** for the TS engine layers (`src/logic`, `core/`, `engine/`,
-> `automaps/`) — it ships nothing to devices.
+**Smart Maps is not an operating system.** It is a cross-platform Dynamic
+Spatial Engine (DSE): one shared TypeScript core in **[`sm-core/`](./sm-core)**,
+driven by a web shell and a mobile shell that behave identically.
+
+> **⚡ ARCHITECTURE — where things live now.**
+> The engine is `sm-core/` (`ae`, `ai`, `dimensions`, `tiles`, `renderer`,
+> `routing`), with a three-method API: `init()`, `updatePosition(gnss, imu)`,
+> `renderFrame()`. There is no bootloader, no kernel and no start-up phase —
+> see [`sm-core/README.md`](./sm-core/README.md).
+> The web app is **`sm-platform-web/main.ts`**, loaded by `index.html`.
+> The shipping mobile apps are fully native: **`native/android`**
+> (Kotlin + Jetpack Compose) and **`native/ios`** (Swift + SwiftUI) — see
+> `native/ARCHITECTURE.md` and `native/MIGRATION.md`;
+> **`sm-platform-mobile/App.tsx`** is the shared-engine driver they mirror.
+> The Capacitor/Appflow hybrid stack has been removed. Any Appflow/Capacitor
+> instructions further down this README are historical: the directories they
+> reference (`android/`, `ios/`, `capacitor.config.*`) no longer exist.
 
 A unified **SM · IN · AM** proto. Three coordinated modules — Smart Maps (renderer),
 Immersive Navigation (camera engine), and Ask Maps (AI command layer) — running inside

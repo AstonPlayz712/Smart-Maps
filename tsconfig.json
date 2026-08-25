@@ -19,6 +19,8 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
+      "sm-core": ["sm-core/index.ts"],
+      "sm-core/*": ["sm-core/*"],
       "@engine/*": ["src/engine/*"],
       "@modules/*": ["src/modules/*"],
       "@components/*": ["src/components/*"],
@@ -26,6 +28,18 @@
       "@data/*": ["src/data/*"]
     }
   },
-  "include": ["src", "core", "engine", "automaps"],
+  "include": [
+    "sm-core",
+    "sm-platform-web",
+    "sm-platform-mobile",
+    "src",
+    "core",
+    "engine",
+    "automaps",
+    "devshell/src",
+    "devshell/sim",
+    "scripts/demo-entry.ts",
+    "scripts/_map-smoke-entry.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

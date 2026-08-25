@@ -1,0 +1,100 @@
+#
+# Web / DevShell build — typecheck + production build for the browser path.
+#
+# The Android and iOS workflows are path-filtered to native/**, so nothing was
+# verifying the web sources (src/, core/, engine/, automaps/, devshell/src/).
+# That is the path DevShell mode runs on, so it gets its own gate.
+#
+
+name: Web build
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'sm-core/**'
+      - 'sm-platform-web/**'
+      - 'sm-platform-mobile/**'
+      - 'src/**'
+      - 'core/**'
+      - 'engine/**'
+      - 'automaps/**'
+      - 'devshell/**'
+      - 'public/maps/**'
+      - 'scripts/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - 'vite.config.ts'
+      - '.github/workflows/web-build.yml'
+  pull_request:
+    paths:
+      - 'sm-core/**'
+      - 'sm-platform-web/**'
+      - 'sm-platform-mobile/**'
+      - 'src/**'
+      - 'core/**'
+      - 'engine/**'
+      - 'automaps/**'
+      - 'devshell/**'
+      - 'public/maps/**'
+      - 'scripts/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - 'vite.config.ts'
+      - '.github/workflows/web-build.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: web-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: DevShell smoke test
+        # Boots DevShell against a simulated Windows host and asserts the
+        # fallback engages, the first fix is synchronous, the telemetry carries
+        # every field the native providers emit, and the indoor journey walks
+        # its full floor cycle deterministically.
+        run: node scripts/devshell-smoke.mjs
+
+      - name: DSE smoke test
+        # Guards the engine contract the shells depend on: every module is
+        # importable from its own sm-core path, init() resolves immediately
+        # (there is no boot phase), the three-call API works on a coarse fix,
+        # frames carry no internal layers unless debugMode is on, and web and
+        # mobile drive identical state from an identical trace.
+        run: node scripts/dse-smoke.mjs
+
+      - name: Map / telemetry / routing smoke test
+        # Guards the v2 engine: tile projection and POI alignment, the accuracy
+        # ring maths and clamp, the debugMode gate, indoor floor clipping,
+        # multi-floor routing, and the telemetry bug fixes.
+        run: node scripts/map-smoke.mjs

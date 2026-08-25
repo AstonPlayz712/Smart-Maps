@@ -1,0 +1,272 @@
+{
+ "format": "sm-indoor-venue",
+ "version": 1,
+ "venueId": "sm-atrium",
+ "name": "SM Atrium",
+ "origin": {
+  "lng": -0.1281,
+  "lat": 51.5071
+ },
+ "floors": [
+  {
+   "level": 0,
+   "name": "Ground",
+   "elevationM": 0,
+   "outline": [
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5065
+    },
+    {
+     "lng": -0.1275,
+     "lat": 51.5065
+    },
+    {
+     "lng": -0.1275,
+     "lat": 51.5077
+    },
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5077
+    },
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5065
+    }
+   ],
+   "walls": [
+    [
+     {
+      "lng": -0.1281,
+      "lat": 51.5065
+     },
+     {
+      "lng": -0.1281,
+      "lat": 51.50728
+     }
+    ]
+   ],
+   "walkNodes": [
+    {
+     "id": "f0-entrance",
+     "position": {
+      "lng": -0.12858,
+      "lat": 51.50662
+     }
+    },
+    {
+     "id": "f0-hall",
+     "position": {
+      "lng": -0.1281,
+      "lat": 51.5071
+     }
+    },
+    {
+     "id": "f0-far",
+     "position": {
+      "lng": -0.12761999999999998,
+      "lat": 51.507580000000004
+     }
+    }
+   ],
+   "walkEdges": [
+    {
+     "from": "f0-entrance",
+     "to": "f0-hall"
+    },
+    {
+     "from": "f0-hall",
+     "to": "f0-far"
+    }
+   ]
+  },
+  {
+   "level": 1,
+   "name": "Level 1",
+   "elevationM": 4.2,
+   "outline": [
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5065
+    },
+    {
+     "lng": -0.1275,
+     "lat": 51.5065
+    },
+    {
+     "lng": -0.1275,
+     "lat": 51.5077
+    },
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5077
+    },
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5065
+    }
+   ],
+   "walls": [
+    [
+     {
+      "lng": -0.1281,
+      "lat": 51.5065
+     },
+     {
+      "lng": -0.1281,
+      "lat": 51.50728
+     }
+    ]
+   ],
+   "walkNodes": [
+    {
+     "id": "f1-entrance",
+     "position": {
+      "lng": -0.12858,
+      "lat": 51.50662
+     }
+    },
+    {
+     "id": "f1-hall",
+     "position": {
+      "lng": -0.1281,
+      "lat": 51.5071
+     }
+    },
+    {
+     "id": "f1-far",
+     "position": {
+      "lng": -0.12761999999999998,
+      "lat": 51.507580000000004
+     }
+    }
+   ],
+   "walkEdges": [
+    {
+     "from": "f1-entrance",
+     "to": "f1-hall"
+    },
+    {
+     "from": "f1-hall",
+     "to": "f1-far"
+    }
+   ]
+  },
+  {
+   "level": 2,
+   "name": "Level 2",
+   "elevationM": 8.4,
+   "outline": [
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5065
+    },
+    {
+     "lng": -0.1275,
+     "lat": 51.5065
+    },
+    {
+     "lng": -0.1275,
+     "lat": 51.5077
+    },
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5077
+    },
+    {
+     "lng": -0.12869999999999998,
+     "lat": 51.5065
+    }
+   ],
+   "walls": [
+    [
+     {
+      "lng": -0.1281,
+      "lat": 51.5065
+     },
+     {
+      "lng": -0.1281,
+      "lat": 51.50728
+     }
+    ]
+   ],
+   "walkNodes": [
+    {
+     "id": "f2-entrance",
+     "position": {
+      "lng": -0.12858,
+      "lat": 51.50662
+     }
+    },
+    {
+     "id": "f2-hall",
+     "position": {
+      "lng": -0.1281,
+      "lat": 51.5071
+     }
+    },
+    {
+     "id": "f2-far",
+     "position": {
+      "lng": -0.12761999999999998,
+      "lat": 51.507580000000004
+     }
+    }
+   ],
+   "walkEdges": [
+    {
+     "from": "f2-entrance",
+     "to": "f2-hall"
+    },
+    {
+     "from": "f2-hall",
+     "to": "f2-far"
+    }
+   ]
+  }
+ ],
+ "connectors": [
+  {
+   "id": "stairs-a",
+   "kind": "stairs",
+   "position": {
+    "lng": -0.12797999999999998,
+    "lat": 51.5071
+   },
+   "floors": [
+    0,
+    1,
+    2
+   ],
+   "secondsPerFloor": 22
+  },
+  {
+   "id": "lift-a",
+   "kind": "lift",
+   "position": {
+    "lng": -0.12822,
+    "lat": 51.5071
+   },
+   "floors": [
+    0,
+    1,
+    2
+   ],
+   "secondsPerFloor": 14
+  },
+  {
+   "id": "esc-a",
+   "kind": "escalator",
+   "position": {
+    "lng": -0.1281,
+    "lat": 51.50728
+   },
+   "floors": [
+    0,
+    1
+   ],
+   "secondsPerFloor": 16,
+   "bidirectional": false
+  }
+ ]
+}

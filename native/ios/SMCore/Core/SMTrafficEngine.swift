@@ -1,6 +1,7 @@
 //  SMTrafficEngine.swift
-//  6D traffic. MapKit renders Apple's traffic tiles but exposes no traffic
-//  *data* to apps, so SM derives congestion from its own measurements: the
+//  6D traffic. SM's own renderer draws no third-party traffic tiles, and no
+//  platform API exposes traffic *data* to apps, so SM derives congestion from
+//  its own measurements: the
 //  ratio of observed speed to the road's free-flow limit, smoothed per edge,
 //  plus ETA drift. Real signal, no invented feed.
 

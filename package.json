@@ -1,9 +1,9 @@
 {
-  "name": "smart-maps-os",
+  "name": "smart-maps-dse",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Smart Maps A/E browser reference harness for the native apps in native/ — algorithm source of truth, ships nothing to devices.",
+  "description": "Smart Maps Dynamic Spatial Engine — sm-core plus the web and mobile shells that drive it. Not an operating system.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

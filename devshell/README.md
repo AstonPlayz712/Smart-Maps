@@ -1,90 +1,123 @@
-# Smart Maps DevShell
+# DevShell
 
-A native sandbox app that lives next to the main Smart Maps proto but runs **completely independently**.
+DevShell is Smart Maps' **simulated runtime for Windows and any other
+non-native host**. It exists so the web/desktop build can boot and run the full
+A/E engine with no GNSS, no IMU, and no native core underneath it.
 
-## What it is
+The iOS and Android native builds never touch this module.
 
-A separate Android + iOS shell where Auto-class native work happens — GPU rendering, native camera, native tile pipeline, native IN, custom plugins — without Capacitor, without Appflow, and without risking the proto.
+## How it engages
 
-The main Smart Maps app stays the way it is (Capacitor + Appflow + Boot Stability Layer). DevShell is the freedom environment.
+`isNativeCoreAvailable()` (`devshell/src/env.ts`) is the single check:
 
-## What it is *not*
+| Host | Result | What runs |
+|---|---|---|
+| iOS / Android native app | `true` | real CoreLocation / CoreMotion adapters |
+| Native host embedding SM (injects `window.__SM_NATIVE_CORE__`) | `true` | the host's native core |
+| Windows / macOS / Linux desktop browser | **`false`** | **DevShell simulated providers** |
+| Mobile browser (no native core) | **`false`** | **DevShell simulated providers** |
+| Headless / SSR / CI | **`false`** | **DevShell simulated providers** |
 
-- **Not the main app.** Different package id (`com.smartmaps.devshell`), different icon, different lifecycle.
-- **Not Capacitor.** No WebView, no `cap sync`, no `capacitor.config.ts`.
-- **Not on Appflow.** Builds run on the GitHub Actions pipeline at `.github/workflows/android-builds.yml`, or locally via Xcode for iOS.
-- **Not shipping to users.** Internal builds only.
-- **Not subject to the proto's Boot Stability Layer / SM proto modules / LG UI.** DevShell can break and rebuild freely; the proto is unaffected.
+Force it either way for testing with `window.__SM_FORCE_DEVSHELL__ = true`.
 
-## Directory layout
+When the check is false, `SmartMapsEngine` registers
+`SimulatedLocationProvider` as the **primary** location provider and starts
+`DevShellRuntime`, which replaces every hardware feed:
 
 ```
-devshell/
-├── README.md                  ← you are here
-├── android/                   ← Android Gradle project (Kotlin + JNI + C++)
-│   ├── build.gradle
-│   ├── settings.gradle
-│   ├── gradle.properties
-│   ├── gradle/wrapper/        ← Gradle 8.2.1 wrapper
-│   ├── gradlew, gradlew.bat
-│   └── app/
-│       ├── build.gradle       ← namespace com.smartmaps.devshell, minSdk 26
-│       ├── CMakeLists.txt     ← compiles the native sandbox lib
-│       ├── proguard-rules.pro
-│       └── src/main/
-│           ├── AndroidManifest.xml
-│           ├── cpp/           ← JNI entry points
-│           ├── java/com/smartmaps/devshell/
-│           │   ├── MainActivity.kt
-│           │   └── NativeBridge.kt
-│           └── res/           ← minimal flat UI
-├── ios/                       ← Xcode-managed (manual setup, see ios/README.md)
-│   ├── README.md
-│   ├── Sources/               ← Swift source templates to drop into a new Xcode project
-│   └── Info.plist.template
-├── src/                       ← future shared TS (currently empty placeholder)
-└── native/                    ← cross-platform native C++ shared between Android + iOS
-    └── core/
-        ├── renderer.h
-        └── renderer.cpp
+simulated GNSS → LocationProviders   (map centre, provider chip, NavigationService)
+simulated GNSS → SMCore.pushGnss     (position, dead reckoning, Always-IN)
+simulated IMU  → SMCore.pushImu      (motion state + confidence)
+simulated pose → SmartMapsAE.setEgo  (Dynamic Engine 3D…7D pipeline)
 ```
 
-## How to build
+## Boot resolves immediately
 
-### Android (cloud)
+`SimulatedLocationProvider.start()` publishes its first fix **synchronously**,
+and `DevShellRuntime.start()` runs one engine tick before it returns. So a
+location, an Always-IN state and an ego pose all exist before boot finishes —
+nothing waits on a lock that would never arrive, and the 8 s boot deadline in
+`index.html` is never reached for want of a fix.
 
-Every push that touches `devshell/` or runs `.github/workflows/android-builds.yml` manually produces a DevShell debug APK as a workflow artifact. Download from the Actions run summary.
+Measured on a simulated Windows host: `start()` returns in **~3 ms** with a fix
+already cached.
 
-```yaml
-# .github/workflows/android-builds.yml has a `devshell` job that runs:
-cd devshell/android
-./gradlew assembleDebug
+## Emitted telemetry
+
+`DevShellSample` mirrors the native providers field for field, so no consumer
+needs a DevShell-specific code path:
+
+| Field | Example |
+|---|---|
+| `position` | `{ lat: 51.50515, lng: -0.13141 }` |
+| `accuracyM` | `6.46` |
+| `motionState` | `still` / `walking` / `driving` / `unknown` |
+| `confidence` | `0.715` |
+| `headingDeg` | `89.99` |
+| `speedMps` | `12` |
+| `updateRateHz` | `10` |
+
+A matching IMU stream (`accelMagnitude`, `gyroMagnitude`) accompanies it, so
+dead reckoning and motion confidence behave as they do on hardware.
+
+## Simulation modes (`DevShellConfig`)
+
+`DevShellConfig` lives in `devshell/sim/config.ts` and is re-exported from
+`devshell/src/env.ts`, so the environment check and the mode selection come
+from one place. Resolution order: explicit argument → `window.__SM_DEVSHELL_CONFIG__`
+→ `?devshell=<mode>` in the URL → the default.
+
+| Mode | What it does |
+|---|---|
+| `looped` *(default)* | The drive loop DevShell shipped with. Always-IN is driven by the **live engine**. |
+| `path` | Plays back a scripted journey — GNSS path, motion sequence, and an optional Always-IN timeline. Deterministic. |
+| `static` | A fixed pose that never moves, for UI debugging. Always-IN pinned to `OFF`. |
+| `chaotic` | Randomised (but seeded) noise, lurching speed, heading wander and GNSS dropouts — stresses smoothing, snapping and camera code. |
+
+```js
+// Before the app boots:
+window.__SM_DEVSHELL_CONFIG__ = { mode: 'path' };
+// or just open  index.html?devshell=chaotic
 ```
 
-### Android (local — optional)
+Journeys live in `devshell/sim/journeys/`. Copy `sampleJourney.ts` to add one:
 
-```bash
-cd devshell/android
-./gradlew assembleDebug
-# APK at app/build/outputs/apk/debug/app-debug.apk
+```ts
+export const MY_JOURNEY: JourneyScript = {
+  id: 'my-run', name: 'My run', speedMps: 11,
+  path: [{ lat, lng, accuracyM, headingDeg, speedMps, holdSeconds }, ...],
+  motionSequence: [{ state: 'driving', seconds: 12 }, ...],
+  inTimeline:     [{ state: 'PREP', seconds: 6 }, ...]
+};
 ```
 
-Requirements: JDK 17, Android SDK with platform 34 + build-tools 34, NDK 25.2.9519653, CMake 3.22.1. The cloud pipeline pre-installs all of this.
+## A note on `HOLD`
 
-### iOS (manual via Xcode)
+The shared Always-IN engine has four states: `OFF | PREP | ACTIVE | EXIT`.
+DevShell reports a **superset** that adds `HOLD`. The engine is deliberately
+*not* being given a fifth state — that would change live product behaviour on
+every platform, not just DevShell. Instead:
 
-See `ios/README.md`. The iOS scaffold ships as Swift source templates so you can create a fresh Xcode project, drag the files in, and have something that builds for the iPhone 11 without a half-broken `project.pbxproj` in git.
+* scripted journeys may name `HOLD` directly in their `inTimeline`;
+* otherwise DevShell derives it — `ACTIVE` plus a sustained stop (≥2.5 s) is a
+  hold at a junction.
 
-## What's already wired up
+`status().engineINState` always carries the raw four-state engine value, so
+consumers that only understand those can use it unchanged.
 
-- **Android Kotlin app** that loads on launch, instantiates `NativeBridge`, calls into C++ via JNI, and renders the returned greeting string. Proves the Kotlin ↔ JNI ↔ C++ round-trip end-to-end.
-- **Shared C++ renderer skeleton** under `native/core/` consumed by both the Android Gradle build (via `CMakeLists.txt`) and (eventually) the iOS Xcode project.
-- **Theme**: matches the proto's brand palette (`#070b14` / `#00e5ff`) so DevShell visually identifies as part of Smart Maps OS while being its own binary.
+## The simulation
 
-## Roadmap
+A vehicle drives a closed loop around the boot origin, cycling
+cruise → slowing → stopped → accelerating, so motion state, speed, heading and
+accuracy all change realistically. Noise is **seeded, not random**, so a
+DevShell session replays identically.
 
-1. **Phase 1 (now)** — Round-trip native string. Done.
-2. **Phase 2** — `GLSurfaceView` + GLES3 hello-triangle from C++. The CMake stack already links `EGL` + `GLESv3`.
-3. **Phase 3** — Vulkan or Metal renderer, port `native/core/renderer.cpp` to draw tiled geometry.
-4. **Phase 4** — Wire to AutoTiles native tile pipeline.
-5. **Phase 5** — Eventually replace the main Smart Maps proto's Capacitor WebView with the DevShell-developed native shell once it's stable.
+The default loop is a tight ~250 m circuit, which puts a junction inside the
+Always-IN approach envelope every ~25–30 s — the full `OFF → PREP → ACTIVE`
+cycle is observable within seconds of boot. Pass `route` or `speedMps` in
+`DevShellOptions` for longer-run testing.
+
+Verified headlessly on a simulated Windows host: environment detected as
+`browser-desktop` / `nativeCore = false`, fix available synchronously,
+all six required fields present, position advancing, and Always-IN reaching
+`ACTIVE` at ~26 s.
